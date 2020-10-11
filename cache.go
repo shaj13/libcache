@@ -32,6 +32,10 @@ type Cache interface {
 	Len() int
 	// Cap Returns the cache capacity.
 	Cap() int
+	// TTL returns entries default TTL.
+	TTL() time.Duration
+	// SetTTL sets entries default TTL.
+	SetTTL(time.Duration)
 }
 
 // OnEvicted define a function signature to be
@@ -126,4 +130,16 @@ func (c *cache) Cap() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.container.Cap()
+}
+
+func (c *cache) TTL() time.Duration {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.container.TTL()
+}
+
+func (c *cache) SetTTL(ttl time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.container.SetTTL(ttl)
 }

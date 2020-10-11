@@ -76,6 +76,14 @@ func (f *fifo) Cap() int {
 	return f.c.Capacity
 }
 
+func (f *fifo) TTL() time.Duration {
+	return f.c.TTL()
+}
+
+func (f *fifo) SetTTL(ttl time.Duration) {
+	f.c.SetTTL(ttl)
+}
+
 type collection struct {
 	ll *list.List
 }

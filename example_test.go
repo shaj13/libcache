@@ -58,15 +58,14 @@ func Example_onexpired() {
 	// c must be thread safe
 	var c memc.Cache
 
-	ttl := lru.TTL(time.Millisecond)
 	exp := lru.RegisterOnExpired(func(key interface{}) {
 		// use Peek/Load over delete, perhaps a new entry added with the same key during expiration,
 		// or entry refreshed from other thread.
 		c.Peek(key)
 	})
 
-	c = memc.LRU.New(ttl, exp)
-
+	c = memc.LRU.New(exp)
+	c.SetTTL(time.Millisecond)
 	c.Store(1, 0)
 
 	time.Sleep(time.Millisecond * 5)

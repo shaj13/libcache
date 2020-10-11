@@ -76,6 +76,14 @@ func (l *lru) Cap() int {
 	return l.c.Capacity
 }
 
+func (l *lru) TTL() time.Duration {
+	return l.c.TTL()
+}
+
+func (l *lru) SetTTL(ttl time.Duration) {
+	l.c.SetTTL(ttl)
+}
+
 type collection struct {
 	ll *list.List
 }

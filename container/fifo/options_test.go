@@ -2,7 +2,6 @@ package fifo
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,11 +25,4 @@ func TestRegisterOnExpired(t *testing.T) {
 	fifo := New(opt).(*fifo)
 
 	assert.NotNil(t, fifo.c.OnExpired)
-}
-
-func TestTTL(t *testing.T) {
-	opt := TTL(time.Hour)
-	fifo := New(opt).(*fifo)
-
-	assert.Equal(t, fifo.c.TTL, time.Hour)
 }

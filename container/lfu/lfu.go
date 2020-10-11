@@ -76,6 +76,14 @@ func (l *lfu) Cap() int {
 	return l.c.Capacity
 }
 
+func (l *lfu) TTL() time.Duration {
+	return l.c.TTL()
+}
+
+func (l *lfu) SetTTL(ttl time.Duration) {
+	l.c.SetTTL(ttl)
+}
+
 type element struct {
 	value *internal.Entry
 	index int
