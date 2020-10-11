@@ -13,14 +13,11 @@ func init() {
 }
 
 // New returns new thread unsafe cache container.
-func New(opts ...memc.Option) memc.Cache {
+func New(cap int) memc.Cache {
 	f := &frequently{}
 	f.Init()
 	lfu := new(lfu)
-	lfu.c = internal.New(f)
-	for _, opt := range opts {
-		opt.Apply(lfu)
-	}
+	lfu.c = internal.New(f, cap)
 	return lfu
 }
 

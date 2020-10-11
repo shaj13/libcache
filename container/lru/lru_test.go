@@ -12,14 +12,14 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	lru := New()
+	lru := New(0)
 	lru.Store(1, 1)
 	ok := lru.Contains(1)
 	assert.True(t, ok)
 }
 
 func TestSet(t *testing.T) {
-	lru := New()
+	lru := New(0)
 	lru.Set(1, 1, time.Nanosecond*10)
 	time.Sleep(time.Nanosecond * 20)
 	ok := lru.Contains(1)
@@ -27,7 +27,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	lru := New()
+	lru := New(0)
 	lru.Store("1", 1)
 	v, ok := lru.Load("1")
 	assert.True(t, ok)
@@ -35,7 +35,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	lru := New()
+	lru := New(0)
 	lru.Store(1, 1)
 	lru.Delete(1)
 	ok := lru.Contains(1)
@@ -43,8 +43,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPeek(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
+	lru := New(3)
 
 	lru.Store(1, 0)
 	lru.Store(2, 0)
@@ -59,9 +58,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
-
+	lru := New(3)
 	lru.Store(1, 0)
 	lru.Store(2, 0)
 	lru.Store(3, 0)
@@ -74,9 +71,7 @@ func TestContains(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
-
+	lru := New(3)
 	lru.Store(1, 0)
 	lru.Store(2, 0)
 	lru.Store(3, 0)
@@ -91,9 +86,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
-
+	lru := New(3)
 	lru.Store(1, 0)
 	lru.Store(2, 0)
 	lru.Store(3, 0)
@@ -103,8 +96,7 @@ func TestPurge(t *testing.T) {
 }
 
 func TestResize(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
+	lru := New(3)
 
 	lru.Store(1, 0)
 	lru.Store(2, 0)
@@ -118,7 +110,7 @@ func TestResize(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	lru := New()
+	lru := New(0)
 
 	lru.Store(1, 0)
 	lru.Store(2, 0)
@@ -128,8 +120,7 @@ func TestKeys(t *testing.T) {
 }
 
 func TestCap(t *testing.T) {
-	lru := New().(*lru)
-	lru.c.Capacity = 3
+	lru := New(3)
 	assert.Equal(t, 3, lru.Cap())
 }
 
@@ -143,8 +134,7 @@ func TestOnEvicted(t *testing.T) {
 		send <- key
 	}
 
-	lru := New().(*lru)
-	lru.c.Capacity = 20
+	lru := New(20).(*lru)
 	lru.c.OnEvicted = onEvictedFun
 
 	go func() {
@@ -181,7 +171,7 @@ func TestOnExpired(t *testing.T) {
 		send <- key
 	}
 
-	lru := New().(*lru)
+	lru := New(0).(*lru)
 	lru.c.OnExpired = onExpiredFun
 	lru.SetTTL(time.Millisecond)
 
@@ -210,7 +200,7 @@ func TestOnExpired(t *testing.T) {
 
 func BenchmarkLRU(b *testing.B) {
 	keys := []interface{}{}
-	lru := memc.LRU.New()
+	lru := memc.LRU.New(0)
 
 	for i := 0; i < 100; i++ {
 		keys = append(keys, i)

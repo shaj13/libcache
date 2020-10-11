@@ -14,13 +14,10 @@ func init() {
 }
 
 // New returns new thread unsafe cache container.
-func New(opts ...memc.Option) memc.Cache {
+func New(cap int) memc.Cache {
 	col := &collection{list.New()}
 	fifo := new(fifo)
-	fifo.c = internal.New(col)
-	for _, opt := range opts {
-		opt.Apply(fifo)
-	}
+	fifo.c = internal.New(col, cap)
 	return fifo
 }
 

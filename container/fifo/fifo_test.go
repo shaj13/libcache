@@ -12,14 +12,14 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	fifo := New()
+	fifo := New(0)
 	fifo.Store(1, 1)
 	ok := fifo.Contains(1)
 	assert.True(t, ok)
 }
 
 func TestSet(t *testing.T) {
-	fifo := New()
+	fifo := New(0)
 	fifo.Set(1, 1, time.Nanosecond*10)
 	time.Sleep(time.Nanosecond * 20)
 	ok := fifo.Contains(1)
@@ -27,7 +27,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	fifo := New()
+	fifo := New(0)
 	fifo.Store("1", 1)
 	v, ok := fifo.Load("1")
 	assert.True(t, ok)
@@ -35,7 +35,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	fifo := New()
+	fifo := New(0)
 	fifo.Store(1, 1)
 	fifo.Delete(1)
 	ok := fifo.Contains(1)
@@ -43,8 +43,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPeek(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -59,8 +58,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -74,8 +72,7 @@ func TestContains(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -91,8 +88,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -103,8 +99,7 @@ func TestPurge(t *testing.T) {
 }
 
 func TestResize(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -118,7 +113,7 @@ func TestResize(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	fifo := New()
+	fifo := New(0)
 
 	fifo.Store(1, 0)
 	fifo.Store(2, 0)
@@ -128,8 +123,7 @@ func TestKeys(t *testing.T) {
 }
 
 func TestCap(t *testing.T) {
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 3
+	fifo := New(3)
 	assert.Equal(t, 3, fifo.Cap())
 }
 
@@ -143,9 +137,8 @@ func TestOnEvicted(t *testing.T) {
 		send <- key
 	}
 
-	fifo := New().(*fifo)
-	fifo.c.Capacity = 20
-	fifo.c.OnEvicted = onEvictedFun
+	fifo := New(20).(*fifo)
+	fifo.RegisterOnEvicted(onEvictedFun)
 
 	go func() {
 		for {
@@ -181,7 +174,7 @@ func TestOnExpired(t *testing.T) {
 		send <- key
 	}
 
-	fifo := New().(*fifo)
+	fifo := New(0).(*fifo)
 	fifo.c.OnExpired = onExpiredFun
 	fifo.SetTTL(time.Millisecond)
 
@@ -210,7 +203,7 @@ func TestOnExpired(t *testing.T) {
 
 func BenchmarkFIFO(b *testing.B) {
 	keys := []interface{}{}
-	fifo := memc.FIFO.New()
+	fifo := memc.FIFO.New(0)
 
 	for i := 0; i < 100; i++ {
 		keys = append(keys, i)

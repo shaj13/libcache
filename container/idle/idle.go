@@ -12,7 +12,7 @@ func init() {
 }
 
 // New return idle cache container that never finds/stores a key's value.
-func New(opts ...memc.Option) memc.Cache {
+func New(cap int) memc.Cache {
 	return idle{}
 }
 

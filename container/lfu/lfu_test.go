@@ -12,14 +12,14 @@ import (
 )
 
 func TestStore(t *testing.T) {
-	lfu := New()
+	lfu := New(0)
 	lfu.Store(1, 1)
 	ok := lfu.Contains(1)
 	assert.True(t, ok)
 }
 
 func TestSet(t *testing.T) {
-	lfu := New()
+	lfu := New(0)
 	lfu.Set(1, 1, time.Nanosecond*10)
 	time.Sleep(time.Nanosecond * 20)
 	ok := lfu.Contains(1)
@@ -27,7 +27,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	lfu := New()
+	lfu := New(0)
 	lfu.Store("1", 1)
 	v, ok := lfu.Load("1")
 	assert.True(t, ok)
@@ -35,7 +35,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	lfu := New()
+	lfu := New(0)
 	lfu.Store(1, 1)
 	lfu.Delete(1)
 	ok := lfu.Contains(1)
@@ -43,8 +43,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestPeek(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
+	lfu := New(3)
 
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
@@ -59,9 +58,7 @@ func TestPeek(t *testing.T) {
 }
 
 func TestContains(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
-
+	lfu := New(3)
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
 	lfu.Store(3, 0)
@@ -74,8 +71,7 @@ func TestContains(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
+	lfu := New(3)
 
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
@@ -91,8 +87,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestPurge(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
+	lfu := New(3)
 
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
@@ -103,8 +98,7 @@ func TestPurge(t *testing.T) {
 }
 
 func TestResize(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
+	lfu := New(3)
 
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
@@ -118,7 +112,7 @@ func TestResize(t *testing.T) {
 }
 
 func TestKeys(t *testing.T) {
-	lfu := New()
+	lfu := New(0)
 
 	lfu.Store(1, 0)
 	lfu.Store(2, 0)
@@ -128,13 +122,12 @@ func TestKeys(t *testing.T) {
 }
 
 func TestCap(t *testing.T) {
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 3
+	lfu := New(3)
 	assert.Equal(t, 3, lfu.Cap())
 }
 
 func TestLFU(t *testing.T) {
-	lfu := New().(*lfu)
+	lfu := New(0)
 	lfu.Store(1, 1)
 	lfu.Store(2, 2)
 	lfu.Store(3, 3)
@@ -161,9 +154,8 @@ func TestOnEvicted(t *testing.T) {
 		send <- key
 	}
 
-	lfu := New().(*lfu)
-	lfu.c.Capacity = 20
-	lfu.c.OnEvicted = onEvictedFun
+	lfu := New(20)
+	lfu.RegisterOnEvicted(onEvictedFun)
 
 	go func() {
 		for {
@@ -202,7 +194,7 @@ func TestOnExpired(t *testing.T) {
 		send <- key
 	}
 
-	lfu := New().(*lfu)
+	lfu := New(0).(*lfu)
 	lfu.c.OnExpired = onExpiredFun
 	lfu.SetTTL(time.Millisecond)
 
@@ -231,7 +223,7 @@ func TestOnExpired(t *testing.T) {
 
 func BenchmarkLFU(b *testing.B) {
 	keys := []interface{}{}
-	lfu := memc.LFU.New()
+	lfu := memc.LFU.New(0)
 
 	for i := 0; i < 100; i++ {
 		keys = append(keys, i)
