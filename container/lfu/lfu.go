@@ -84,6 +84,14 @@ func (l *lfu) SetTTL(ttl time.Duration) {
 	l.c.SetTTL(ttl)
 }
 
+func (l *lfu) RegisterOnEvicted(fn func(key, value interface{})) {
+	l.c.OnEvicted = fn
+}
+
+func (l *lfu) RegisterOnExpired(fn func(key interface{})) {
+	l.c.OnExpired = fn
+}
+
 type element struct {
 	value *internal.Entry
 	index int

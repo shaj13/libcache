@@ -84,6 +84,16 @@ func (f *fifo) SetTTL(ttl time.Duration) {
 	f.c.SetTTL(ttl)
 }
 
+func (f *fifo) RegisterOnEvicted(fn func(key, value interface{})){
+	f.c.OnEvicted = fn
+}
+
+func (f *fifo) RegisterOnExpired(fn func(key interface{}))        {
+	f.c.OnExpired = fn
+}
+
+
+
 type collection struct {
 	ll *list.List
 }
