@@ -82,7 +82,7 @@ type collection struct {
 
 func (c *collection) Move(e *internal.Entry) {}
 
-func (c *collection) Push(e *internal.Entry) {
+func (c *collection) Add(e *internal.Entry) {
 	le := c.ll.PushBack(e)
 	e.Element = le
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/shaj13/memc/container/fifo"
 	_ "github.com/shaj13/memc/container/idle"
 	"github.com/shaj13/memc/container/lru"
+	"github.com/shaj13/memc/container/lfu"
 )
 
 func Example_idle() {
@@ -37,6 +38,18 @@ func Example_lru() {
 	c.Store(2, 0)
 	c.Store(3, 0)
 	fmt.Println(c.Contains(1))
+	// Output:
+	// false
+}
+
+func Example_lfu() {
+	cap := lfu.Capacity(2)
+	c := memc.LFU.New(cap)
+	c.Store(1, 0)
+	c.Store(2, 0)
+	c.Load(1)
+	c.Store(3, 0)
+	fmt.Println(c.Contains(2))
 	// Output:
 	// false
 }
