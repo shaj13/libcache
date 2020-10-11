@@ -1,7 +1,11 @@
 // Package idle implements an IDLE cache, that never finds/stores a key's value.
 package idle
 
-import "github.com/shaj13/memc"
+import (
+	"time"
+
+	"github.com/shaj13/memc"
+)
 
 func init() {
 	memc.IDLE.Register(New)
@@ -14,14 +18,15 @@ func New(opts ...memc.Option) memc.Cache {
 
 type idle struct{}
 
-func (idle) Load(interface{}) (v interface{}, ok bool) { return }
-func (idle) Peek(interface{}) (v interface{}, ok bool) { return }
-func (idle) Keys() (keys []interface{})                { return }
-func (idle) Contains(interface{}) (ok bool)            { return }
-func (idle) Resize(int) (i int)                        { return }
-func (idle) Len() (len int)                            { return }
-func (idle) Cap() (cap int)                            { return }
-func (idle) Update(interface{}, interface{})           {}
-func (idle) Store(interface{}, interface{})            {}
-func (idle) Delete(interface{})                        {}
-func (idle) Purge()                                    {}
+func (idle) Load(interface{}) (v interface{}, ok bool)   { return }
+func (idle) Peek(interface{}) (v interface{}, ok bool)   { return }
+func (idle) Keys() (keys []interface{})                  { return }
+func (idle) Contains(interface{}) (ok bool)              { return }
+func (idle) Resize(int) (i int)                          { return }
+func (idle) Len() (len int)                              { return }
+func (idle) Cap() (cap int)                              { return }
+func (idle) Update(interface{}, interface{})             {}
+func (idle) Store(interface{}, interface{})              {}
+func (idle) Set(interface{}, interface{}, time.Duration) {}
+func (idle) Delete(interface{})                          {}
+func (idle) Purge()                                      {}

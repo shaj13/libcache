@@ -3,18 +3,21 @@ package memc
 
 import (
 	"sync"
+	"time"
 )
 
 // Cache stores data so that future requests for that data can be served faster.
 type Cache interface {
-	// Load returns key's value.
+	// Load returns key value.
 	Load(key interface{}) (interface{}, bool)
-	// Peek returns key's value without updating the underlying "rank".
+	// Peek returns key value without updating the underlying "rank".
 	Peek(key interface{}) (interface{}, bool)
 	// Update the key value without updating the underlying "rank".
 	Update(key interface{}, value interface{})
-	// Store sets the value for a key.
+	// Store sets the key value.
 	Store(key interface{}, value interface{})
+	// Set sets the key value with TTL overrides the default.
+	Set(key interface{}, value interface{}, ttl time.Duration)
 	// Delete deletes the key value.
 	Delete(key interface{})
 	// Keys return cache records keys.
@@ -75,6 +78,12 @@ func (c *cache) Store(key interface{}, value interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.container.Store(key, value)
+}
+
+func (c *cache) Set(key interface{}, value interface{}, ttl time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.container.Set(key, value, ttl)
 }
 
 func (c *cache) Delete(key interface{}) {

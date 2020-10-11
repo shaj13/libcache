@@ -3,6 +3,7 @@ package lru
 
 import (
 	"container/list"
+	"time"
 
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/internal"
@@ -37,6 +38,10 @@ func (l *lru) Peek(key interface{}) (interface{}, bool) {
 
 func (l *lru) Store(key, value interface{}) {
 	l.c.Store(key, value)
+}
+
+func (l *lru) Set(key, value interface{}, ttl time.Duration) {
+	l.c.Set(key, value, ttl)
 }
 
 func (l *lru) Update(key, value interface{}) {
