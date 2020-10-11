@@ -30,7 +30,7 @@ type Container struct {
 	Entries    map[interface{}]*Entry
 	OnEvicted  func(key interface{}, value interface{})
 	OnExpired  func(key interface{})
-	TTL        time.Duration
+	ttl        time.Duration
 	Capacity   int
 }
 
@@ -64,7 +64,7 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 
 // Store sets the value for a key.
 func (c *Container) Store(key, value interface{}) {
-	c.Set(key, value, c.TTL)
+	c.Set(key, value, c.ttl)
 }
 
 // Set sets the key value with TTL overrides the default.
@@ -176,6 +176,16 @@ func (c *Container) Evict(e *Entry) {
 	if c.OnEvicted != nil {
 		go c.OnEvicted(e.Key, e.Value)
 	}
+}
+
+// TTL returns entries default TTL.
+func (c *Container) TTL() time.Duration {
+	return c.ttl
+}
+
+// SetTTL sets entries default TTL.
+func (c *Container) SetTTL(ttl time.Duration) {
+	c.ttl = ttl
 }
 
 // New return new container.

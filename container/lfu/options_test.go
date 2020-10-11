@@ -2,7 +2,6 @@ package lfu
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,11 +25,4 @@ func TestRegisterOnExpired(t *testing.T) {
 	lfu := New(opt).(*lfu)
 
 	assert.NotNil(t, lfu.c.OnExpired)
-}
-
-func TestTTL(t *testing.T) {
-	opt := TTL(time.Hour)
-	lfu := New(opt).(*lfu)
-
-	assert.Equal(t, lfu.c.TTL, time.Hour)
 }

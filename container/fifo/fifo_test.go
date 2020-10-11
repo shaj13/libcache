@@ -183,7 +183,7 @@ func TestOnExpired(t *testing.T) {
 
 	fifo := New().(*fifo)
 	fifo.c.OnExpired = onExpiredFun
-	fifo.c.TTL = time.Millisecond
+	fifo.SetTTL(time.Millisecond)
 
 	go func() {
 		for {

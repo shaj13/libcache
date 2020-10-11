@@ -183,7 +183,7 @@ func TestOnExpired(t *testing.T) {
 
 	lru := New().(*lru)
 	lru.c.OnExpired = onExpiredFun
-	lru.c.TTL = time.Millisecond
+	lru.SetTTL(time.Millisecond)
 
 	go func() {
 		for {
