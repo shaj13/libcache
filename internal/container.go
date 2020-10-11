@@ -8,7 +8,7 @@ import (
 // and defines the functions or operations that can be applied to the data elements.
 type Collection interface {
 	Move(*Entry)
-	Push(*Entry)
+	Add(*Entry)
 	Remove(*Entry)
 	GetOldest() *Entry
 	Len() int
@@ -85,8 +85,8 @@ func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	}
 
 	c.Entries[key] = e
-	c.Collection.Push(e)
 	c.RemoveOldest()
+	c.Collection.Add(e)
 }
 
 // Update the key value without updating the underlying "rank".
@@ -154,9 +154,10 @@ func (c *Container) Len() int {
 
 // RemoveOldest Removes the oldest entry from cache.
 func (c *Container) RemoveOldest() {
-	e := c.Collection.GetOldest()
-	if c.Capacity != 0 && c.Len() > c.Capacity && e != nil {
-		c.Evict(e)
+	if c.Capacity != 0 && c.Len() >= c.Capacity {
+		if e := c.Collection.GetOldest(); e != nil {
+			c.Evict(e)
+		}
 	}
 }
 

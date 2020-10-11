@@ -15,6 +15,8 @@ const (
 	LRU
 	// FIFO cache container.
 	FIFO
+	// LFU cache container.
+	LFU
 	max
 )
 

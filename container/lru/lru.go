@@ -85,7 +85,7 @@ func (c *collection) Move(e *internal.Entry) {
 	c.ll.MoveToFront(le)
 }
 
-func (c *collection) Push(e *internal.Entry) {
+func (c *collection) Add(e *internal.Entry) {
 	le := c.ll.PushFront(e)
 	e.Element = le
 }
