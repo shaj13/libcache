@@ -1,0 +1,50 @@
+run:
+  deadline: 2m
+
+linters:
+  disable-all: true
+  fast: false
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dupl
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - nakedret
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+
+linters-settings:
+  lll:
+    line-length: 110
+  goimports:
+    local-prefixes: "github.com/shaj13/memc"
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    
+    - text: "G304: Potential file inclusion via variable"
+      linters:
+        - gosec
+
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+
