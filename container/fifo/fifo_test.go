@@ -18,6 +18,14 @@ func TestStore(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestSet(t *testing.T) {
+	fifo := New()
+	fifo.Set(1, 1, time.Nanosecond*10)
+	time.Sleep(time.Nanosecond * 20)
+	ok := fifo.Contains(1)
+	assert.False(t, ok)
+}
+
 func TestLoad(t *testing.T) {
 	fifo := New()
 	fifo.Store("1", 1)

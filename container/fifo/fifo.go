@@ -3,6 +3,7 @@ package fifo
 
 import (
 	"container/list"
+	"time"
 
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/internal"
@@ -37,6 +38,10 @@ func (f *fifo) Peek(key interface{}) (interface{}, bool) {
 
 func (f *fifo) Store(key, value interface{}) {
 	f.c.Store(key, value)
+}
+
+func (f *fifo) Set(key, value interface{}, ttl time.Duration) {
+	f.c.Set(key, value, ttl)
 }
 
 func (f *fifo) Update(key, value interface{}) {
