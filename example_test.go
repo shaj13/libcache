@@ -7,8 +7,8 @@ import (
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/container/fifo"
 	_ "github.com/shaj13/memc/container/idle"
-	"github.com/shaj13/memc/container/lru"
 	"github.com/shaj13/memc/container/lfu"
+	"github.com/shaj13/memc/container/lru"
 )
 
 func Example_idle() {
@@ -60,7 +60,6 @@ func Example_onexpired() {
 
 	ttl := lru.TTL(time.Millisecond)
 	exp := lru.RegisterOnExpired(func(key interface{}) {
-		fmt.Println("")
 		// use Peek/Load over delete, perhaps a new entry added with the same key during expiration,
 		// or entry refreshed from other thread.
 		c.Peek(key)
