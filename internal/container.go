@@ -50,7 +50,7 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 		return
 	}
 
-	if c.TTL > 0 && time.Now().UTC().After(e.Exp) {
+	if !e.Exp.IsZero() && time.Now().UTC().After(e.Exp) {
 		c.Evict(e)
 		return
 	}
@@ -64,18 +64,33 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 
 // Store sets the value for a key.
 func (c *Container) Store(key, value interface{}) {
+	c.Set(key, value, c.TTL)
+}
+
+// Set sets the key value with TTL overrides the default.
+func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	if e, ok := c.Entries[key]; ok {
 		c.RemoveEntry(e)
 	}
 
-	e := c.withTTL(key, value)
+	e := &Entry{Key: key, Value: value}
+
+	if ttl > 0 {
+		if c.OnExpired != nil {
+			e.Timer = time.AfterFunc(ttl, func() {
+				c.OnExpired(e.Key)
+			})
+		}
+		e.Exp = time.Now().UTC().Add(ttl)
+	}
+
 	c.Entries[key] = e
 	c.Collection.Push(e)
 	c.RemoveOldest()
 }
 
 // Update the key value without updating the underlying "rank".
-func (c *Container) Update(key interface{}, value interface{}) {
+func (c *Container) Update(key, value interface{}) {
 	if e, ok := c.Entries[key]; ok {
 		e.Value = value
 	}
@@ -160,21 +175,6 @@ func (c *Container) Evict(e *Entry) {
 	if c.OnEvicted != nil {
 		go c.OnEvicted(e.Key, e.Value)
 	}
-}
-
-func (c *Container) withTTL(key, value interface{}) *Entry {
-	e := &Entry{Key: key, Value: value}
-
-	if c.TTL > 0 {
-		if c.OnExpired != nil {
-			e.Timer = time.AfterFunc(c.TTL, func() {
-				c.OnExpired(e.Key)
-			})
-		}
-		e.Exp = time.Now().UTC().Add(c.TTL)
-	}
-
-	return e
 }
 
 // New return new container.
