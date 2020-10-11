@@ -188,6 +188,23 @@ func (c *Container) SetTTL(ttl time.Duration) {
 	c.ttl = ttl
 }
 
+// Cap Returns the cache capacity.
+func (c *Container) Cap() int {
+	return c.Capacity
+}
+
+// RegisterOnEvicted registers a function,
+// to call in its own goroutine when an entry is purged from the cache.
+func (c *Container) RegisterOnEvicted(f func(key, value interface{})) {
+	c.OnEvicted = f
+}
+
+// RegisterOnExpired registers a function,
+// to call in its own goroutine when an entry TTL elapsed.
+func (c *Container) RegisterOnExpired(f func(key interface{})) {
+	c.OnExpired = f
+}
+
 // New return new container.
 func New(c Collection) *Container {
 	return &Container{

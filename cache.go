@@ -36,6 +36,21 @@ type Cache interface {
 	TTL() time.Duration
 	// SetTTL sets entries default TTL.
 	SetTTL(time.Duration)
+	// RegisterOnEvicted registers a function,
+	// to call in its own goroutine when an entry is purged from the cache.
+	RegisterOnEvicted(f func(key, value interface{}))
+	// RegisterOnExpired registers a function,
+	// to call in its own goroutine when an entry TTL elapsed.
+	// invocation of f, does not mean the entry is purged from the cache,
+	// if need be, it must coordinate with the cache explicitly.
+	//
+	// 	var cache cache.Cache
+	// 	onExpired := func(key interface{}) {
+	//	 	_, _, _ = cache.Peek(key)
+	// 	}
+	//
+	// This should not be done unless the cache thread-safe.
+	RegisterOnExpired(f func(key interface{}))
 }
 
 // OnEvicted define a function signature to be
@@ -142,4 +157,16 @@ func (c *cache) SetTTL(ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.container.SetTTL(ttl)
+}
+
+func (c *cache) RegisterOnEvicted(f func(key, value interface{})) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.container.RegisterOnEvicted(f)
+}
+
+func (c *cache) RegisterOnExpired(f func(key interface{})) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.container.RegisterOnExpired(f)
 }
