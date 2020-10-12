@@ -5,22 +5,22 @@ import (
 	"sync"
 )
 
-// Container identifies a cache container that implemented in another package.
-type Container uint
-
 const (
 	// IDLE cache container.
 	IDLE Container = iota + 1
-	// LRU cache container.
-	LRU
 	// FIFO cache container.
 	FIFO
+	// LRU cache container.
+	LRU
 	// LFU cache container.
 	LFU
 	max
 )
 
 var containers = make([]func(cap int) Cache, max)
+
+// Container identifies a cache container that implemented in another package.
+type Container uint
 
 // Register registers a function that returns a new instance,
 // of the given cache container function.
@@ -47,7 +47,7 @@ func (c Container) New(cap int) Cache {
 	return cache
 }
 
-// NewUnsafe returns a new thread unsafe cache.
+// NewUnsafe returns a new non-thread safe cache.
 // NewUnsafe panics if the cache container function is not linked into the binary.
 func (c Container) NewUnsafe(cap int) Cache {
 	if !c.Available() {
@@ -55,4 +55,21 @@ func (c Container) NewUnsafe(cap int) Cache {
 	}
 
 	return containers[c](cap)
+}
+
+// String returns string describes the container function.
+func (c Container) String() string {
+	switch c {
+	case IDLE:
+		return "IDLE"
+	case FIFO:
+		return "FIFO"
+	case LRU:
+		return "LRU"
+	case LFU:
+		return "LFU"
+	default:
+		return "unknown container value " + strconv.Itoa(int(c))
+	}
+
 }
