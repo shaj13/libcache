@@ -2,13 +2,10 @@ package fifo
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/shaj13/memc"
 )
 
 func TestStore(t *testing.T) {
@@ -199,26 +196,4 @@ func TestOnExpired(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, []interface{}{1, 2}, expiredKeys)
-}
-
-func BenchmarkFIFO(b *testing.B) {
-	keys := []interface{}{}
-	fifo := memc.FIFO.New(0)
-
-	for i := 0; i < 100; i++ {
-		keys = append(keys, i)
-	}
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			key := keys[rand.Intn(100)]
-			_, ok := fifo.Load(key)
-			if ok {
-				fifo.Delete(key)
-			} else {
-				fifo.Store(key, struct{}{})
-			}
-		}
-	})
 }

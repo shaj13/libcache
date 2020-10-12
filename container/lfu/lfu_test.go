@@ -2,13 +2,10 @@ package lfu
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/shaj13/memc"
 )
 
 func TestStore(t *testing.T) {
@@ -219,26 +216,4 @@ func TestOnExpired(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, []interface{}{1, 2}, expiredKeys)
-}
-
-func BenchmarkLFU(b *testing.B) {
-	keys := []interface{}{}
-	lfu := memc.LFU.New(0)
-
-	for i := 0; i < 100; i++ {
-		keys = append(keys, i)
-	}
-
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			key := keys[rand.Intn(100)]
-			_, ok := lfu.Load(key)
-			if ok {
-				lfu.Delete(key)
-			} else {
-				lfu.Store(key, struct{}{})
-			}
-		}
-	})
 }

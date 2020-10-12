@@ -209,7 +209,7 @@ func (c *Container) RegisterOnExpired(f func(key interface{})) {
 func New(c Collection, cap int) *Container {
 	return &Container{
 		Collection: c,
-		Capacity: cap,
+		Capacity:   cap,
 		Entries:    make(map[interface{}]*Entry),
 	}
 }
