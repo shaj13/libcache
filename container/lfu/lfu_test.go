@@ -8,7 +8,7 @@ import (
 	"github.com/shaj13/memc/internal"
 )
 
-func TestFrequently(t *testing.T) {
+func TestCollection(t *testing.T) {
 	entries := []*internal.Entry{}
 	entries = append(entries, &internal.Entry{Key: 1})
 	entries = append(entries, &internal.Entry{Key: 2})
