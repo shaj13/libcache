@@ -51,7 +51,7 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 	}
 
 	if !e.Exp.IsZero() && time.Now().UTC().After(e.Exp) {
-		c.Evict(e)
+		c.evict(e)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (c *Container) Store(key, value interface{}) {
 // Set sets the key value with TTL overrides the default.
 func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	if e, ok := c.entries[key]; ok {
-		c.RemoveEntry(e)
+		c.removeEntry(e)
 	}
 
 	e := &Entry{Key: key, Value: value}
@@ -85,7 +85,9 @@ func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	}
 
 	c.entries[key] = e
-	c.RemoveOldest()
+	if c.capacity != 0 && c.Len() >= c.capacity {
+		c.RemoveOldest()
+	}
 	c.coll.Add(e)
 }
 
@@ -106,7 +108,7 @@ func (c *Container) Purge() {
 	}
 
 	for _, e := range c.entries {
-		c.Evict(e)
+		c.evict(e)
 	}
 }
 
@@ -129,7 +131,7 @@ func (c *Container) Resize(size int) int {
 // Delete deletes the key value.
 func (c *Container) Delete(key interface{}) {
 	if e, ok := c.entries[key]; ok {
-		c.Evict(e)
+		c.evict(e)
 	}
 }
 
@@ -154,15 +156,13 @@ func (c *Container) Len() int {
 
 // RemoveOldest Removes the oldest entry from cache.
 func (c *Container) RemoveOldest() {
-	if c.capacity != 0 && c.Len() >= c.capacity {
-		if e := c.coll.RemoveOldest(); e != nil {
-			c.Evict(e)
-		}
+	if e := c.coll.RemoveOldest(); e != nil {
+		c.evict(e)
 	}
 }
 
-// RemoveEntry remove entry silently.
-func (c *Container) RemoveEntry(e *Entry) {
+// removeEntry remove entry silently.
+func (c *Container) removeEntry(e *Entry) {
 	c.coll.Remove(e)
 	if e.Timer != nil {
 		e.Timer.Stop()
@@ -170,9 +170,9 @@ func (c *Container) RemoveEntry(e *Entry) {
 	delete(c.entries, e.Key)
 }
 
-// Evict remove entry and fire on evicted callback.
-func (c *Container) Evict(e *Entry) {
-	c.RemoveEntry(e)
+// evict remove entry and fire on evicted callback.
+func (c *Container) evict(e *Entry) {
+	c.removeEntry(e)
 	if c.onEvicted != nil {
 		go c.onEvicted(e.Key, e.Value)
 	}
