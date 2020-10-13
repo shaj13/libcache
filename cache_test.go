@@ -231,7 +231,7 @@ func TestOnEvicted(t *testing.T) {
 
 func TestOnExpired(t *testing.T) {
 	for _, c := range cachetest {
-		t.Run("", func(t *testing.T) {
+		t.Run("Test"+c.String()+"CacheOnExpired", func(t *testing.T) {
 			send := make(chan interface{})
 			done := make(chan bool)
 			expiredKeys := make([]interface{}, 0, 2)
