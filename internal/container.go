@@ -34,12 +34,12 @@ type Container struct {
 	capacity  int
 }
 
-// Load returns key's value.
+// Load returns key value.
 func (c *Container) Load(key interface{}) (interface{}, bool) {
 	return c.get(key, false)
 }
 
-// Peek returns key's value without updating the underlying "rank".
+// Peek returns key value without updating the underlying "rank".
 func (c *Container) Peek(key interface{}) (interface{}, bool) {
 	return c.get(key, true)
 }
@@ -60,6 +60,16 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 	}
 
 	return e.Value, ok
+}
+
+// Expiry returns key value expiry time.
+func (c *Container) Expiry(key interface{}) (time.Time, bool) {
+	var t time.Time
+	e, ok := c.entries[key]
+	if ok {
+		t = e.Exp
+	}
+	return t, ok
 }
 
 // Store sets the value for a key.

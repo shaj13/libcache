@@ -33,9 +33,11 @@ func TestCacheSet(t *testing.T) {
 	for _, c := range cachetest {
 		t.Run("Test"+c.String()+"CacheSet", func(t *testing.T) {
 			cache := c.New(0)
-			cache.Set(1, 1, time.Nanosecond*10)
-			time.Sleep(time.Nanosecond * 20)
-			assert.False(t, cache.Contains(1))
+			cache.Set(1, 1, time.Hour)
+			got, ok := cache.Expiry(1)
+			expect := time.Now().UTC().Add(time.Hour)
+			assert.True(t, ok)
+			assert.WithinDuration(t, expect, got, time.Hour)
 		})
 	}
 }

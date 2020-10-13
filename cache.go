@@ -20,6 +20,10 @@ type Cache interface {
 	Set(key interface{}, value interface{}, ttl time.Duration)
 	// Delete deletes the key value.
 	Delete(key interface{})
+	// DeleteOldest Removes the oldest entry from cache.
+	DeleteOldest() (key, value interface{})
+	// Expiry returns key value expiry time.
+	Expiry(key interface{}) (time.Time, bool)
 	// Keys return cache records keys.
 	Keys() []interface{}
 	// Contains Checks if a key exists in cache.
@@ -36,8 +40,6 @@ type Cache interface {
 	TTL() time.Duration
 	// SetTTL sets entries default TTL.
 	SetTTL(time.Duration)
-	// DeleteOldest Removes the oldest entry from cache.
-	DeleteOldest() (key, value interface{})
 	// RegisterOnEvicted registers a function,
 	// to call in its own goroutine when an entry is purged from the cache.
 	RegisterOnEvicted(f func(key, value interface{}))
@@ -177,4 +179,10 @@ func (c *cache) DeleteOldest() (key, value interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.container.DeleteOldest()
+}
+
+func (c *cache) Expiry(key interface{}) (time.Time, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.container.Expiry(key)
 }
