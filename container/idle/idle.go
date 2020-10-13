@@ -26,6 +26,7 @@ func (idle) Resize(int) (i int)                               { return }
 func (idle) Len() (len int)                                   { return }
 func (idle) Cap() (cap int)                                   { return }
 func (idle) TTL() (t time.Duration)                           { return }
+func (idle) RemoveOldest() (key, value interface{})           { return }
 func (idle) Update(interface{}, interface{})                  {}
 func (idle) Store(interface{}, interface{})                   {}
 func (idle) Set(interface{}, interface{}, time.Duration)      {}

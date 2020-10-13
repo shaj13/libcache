@@ -155,10 +155,12 @@ func (c *Container) Len() int {
 }
 
 // RemoveOldest Removes the oldest entry from cache.
-func (c *Container) RemoveOldest() {
+func (c *Container) RemoveOldest() (key, value interface{}) {
 	if e := c.coll.RemoveOldest(); e != nil {
 		c.evict(e)
+		return e.Key, e.Value
 	}
+	return
 }
 
 // removeEntry remove entry silently.
