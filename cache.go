@@ -10,9 +10,9 @@ import (
 type Cache interface {
 	// Load returns key value.
 	Load(key interface{}) (interface{}, bool)
-	// Peek returns key value without updating the underlying "rank".
+	// Peek returns key value without updating the underlying "recent-ness".
 	Peek(key interface{}) (interface{}, bool)
-	// Update the key value without updating the underlying "rank".
+	// Update the key value without updating the underlying "recent-ness".
 	Update(key interface{}, value interface{})
 	// Store sets the key value.
 	Store(key interface{}, value interface{})
@@ -56,23 +56,6 @@ type Cache interface {
 	// This should not be done unless the cache thread-safe.
 	RegisterOnExpired(f func(key interface{}))
 }
-
-// OnEvicted define a function signature to be
-// executed in its own goroutine when an entry is purged from the cache.
-type OnEvicted func(key interface{}, value interface{})
-
-// OnExpired define a function signature to be
-// executed in its own goroutine when an entry TTL elapsed.
-// invocation of OnExpired, does not mean the entry is purged from the cache,
-// if need be, it must coordinate with the cache explicitly.
-//
-// 	var cache cache.Cache
-// 	onExpired := func(key interface{}) {
-//	 	_, _, _ = cache.Peek(key)
-// 	}
-//
-// This should not be done unless the cache thread-safe.
-type OnExpired func(key interface{})
 
 type cache struct {
 	mu        sync.RWMutex
