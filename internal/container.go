@@ -26,12 +26,12 @@ type Entry struct {
 
 // Container represent core cache container.
 type Container struct {
-	Collection Collection
-	Entries    map[interface{}]*Entry
-	OnEvicted  func(key interface{}, value interface{})
-	OnExpired  func(key interface{})
-	ttl        time.Duration
-	Capacity   int
+	coll      Collection
+	entries   map[interface{}]*Entry
+	onEvicted func(key interface{}, value interface{})
+	onExpired func(key interface{})
+	ttl       time.Duration
+	capacity  int
 }
 
 // Load returns key's value.
@@ -45,7 +45,7 @@ func (c *Container) Peek(key interface{}) (interface{}, bool) {
 }
 
 func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) {
-	e, ok := c.Entries[key]
+	e, ok := c.entries[key]
 	if !ok {
 		return
 	}
@@ -56,7 +56,7 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 	}
 
 	if !peek {
-		c.Collection.Move(e)
+		c.coll.Move(e)
 	}
 
 	return e.Value, ok
@@ -69,50 +69,50 @@ func (c *Container) Store(key, value interface{}) {
 
 // Set sets the key value with TTL overrides the default.
 func (c *Container) Set(key, value interface{}, ttl time.Duration) {
-	if e, ok := c.Entries[key]; ok {
+	if e, ok := c.entries[key]; ok {
 		c.RemoveEntry(e)
 	}
 
 	e := &Entry{Key: key, Value: value}
 
 	if ttl > 0 {
-		if c.OnExpired != nil {
+		if c.onExpired != nil {
 			e.Timer = time.AfterFunc(ttl, func() {
-				c.OnExpired(e.Key)
+				c.onExpired(e.Key)
 			})
 		}
 		e.Exp = time.Now().UTC().Add(ttl)
 	}
 
-	c.Entries[key] = e
+	c.entries[key] = e
 	c.RemoveOldest()
-	c.Collection.Add(e)
+	c.coll.Add(e)
 }
 
 // Update the key value without updating the underlying "rank".
 func (c *Container) Update(key, value interface{}) {
-	if e, ok := c.Entries[key]; ok {
+	if e, ok := c.entries[key]; ok {
 		e.Value = value
 	}
 }
 
 // Purge Clears all cache entries.
 func (c *Container) Purge() {
-	defer c.Collection.Init()
+	defer c.coll.Init()
 
-	if c.OnEvicted == nil {
-		c.Entries = make(map[interface{}]*Entry)
+	if c.onEvicted == nil {
+		c.entries = make(map[interface{}]*Entry)
 		return
 	}
 
-	for _, e := range c.Entries {
+	for _, e := range c.entries {
 		c.Evict(e)
 	}
 }
 
 // Resize cache, returning number evicted
 func (c *Container) Resize(size int) int {
-	c.Capacity = size
+	c.capacity = size
 	diff := c.Len() - size
 
 	if diff < 0 {
@@ -128,7 +128,7 @@ func (c *Container) Resize(size int) int {
 
 // Delete deletes the key value.
 func (c *Container) Delete(key interface{}) {
-	if e, ok := c.Entries[key]; ok {
+	if e, ok := c.entries[key]; ok {
 		c.Evict(e)
 	}
 }
@@ -141,7 +141,7 @@ func (c *Container) Contains(key interface{}) (ok bool) {
 
 // Keys return cache records keys.
 func (c *Container) Keys() (keys []interface{}) {
-	for k := range c.Entries {
+	for k := range c.entries {
 		keys = append(keys, k)
 	}
 	return
@@ -149,13 +149,13 @@ func (c *Container) Keys() (keys []interface{}) {
 
 // Len Returns the number of items in the cache.
 func (c *Container) Len() int {
-	return c.Collection.Len()
+	return c.coll.Len()
 }
 
 // RemoveOldest Removes the oldest entry from cache.
 func (c *Container) RemoveOldest() {
-	if c.Capacity != 0 && c.Len() >= c.Capacity {
-		if e := c.Collection.RemoveOldest(); e != nil {
+	if c.capacity != 0 && c.Len() >= c.capacity {
+		if e := c.coll.RemoveOldest(); e != nil {
 			c.Evict(e)
 		}
 	}
@@ -163,18 +163,18 @@ func (c *Container) RemoveOldest() {
 
 // RemoveEntry remove entry silently.
 func (c *Container) RemoveEntry(e *Entry) {
-	c.Collection.Remove(e)
+	c.coll.Remove(e)
 	if e.Timer != nil {
 		e.Timer.Stop()
 	}
-	delete(c.Entries, e.Key)
+	delete(c.entries, e.Key)
 }
 
 // Evict remove entry and fire on evicted callback.
 func (c *Container) Evict(e *Entry) {
 	c.RemoveEntry(e)
-	if c.OnEvicted != nil {
-		go c.OnEvicted(e.Key, e.Value)
+	if c.onEvicted != nil {
+		go c.onEvicted(e.Key, e.Value)
 	}
 }
 
@@ -190,26 +190,26 @@ func (c *Container) SetTTL(ttl time.Duration) {
 
 // Cap Returns the cache capacity.
 func (c *Container) Cap() int {
-	return c.Capacity
+	return c.capacity
 }
 
 // RegisterOnEvicted registers a function,
 // to call in its own goroutine when an entry is purged from the cache.
 func (c *Container) RegisterOnEvicted(f func(key, value interface{})) {
-	c.OnEvicted = f
+	c.onEvicted = f
 }
 
 // RegisterOnExpired registers a function,
 // to call in its own goroutine when an entry TTL elapsed.
 func (c *Container) RegisterOnExpired(f func(key interface{})) {
-	c.OnExpired = f
+	c.onExpired = f
 }
 
 // New return new container.
 func New(c Collection, cap int) *Container {
 	return &Container{
-		Collection: c,
-		Capacity:   cap,
-		Entries:    make(map[interface{}]*Entry),
+		coll:     c,
+		capacity: cap,
+		entries:  make(map[interface{}]*Entry),
 	}
 }
