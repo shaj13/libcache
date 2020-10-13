@@ -14,6 +14,8 @@ const (
 	LRU
 	// LFU cache container.
 	LFU
+	// MRU cache container.
+	MRU
 	max
 )
 

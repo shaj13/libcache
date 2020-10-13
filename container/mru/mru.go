@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	libcache.LRU.Register(New)
+	libcache.MRU.Register(New)
 }
 
 // New returns new thread unsafe cache container.
