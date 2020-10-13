@@ -2,7 +2,6 @@ package lfu
 
 import (
 	"container/heap"
-	"time"
 
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/internal"
@@ -16,77 +15,7 @@ func init() {
 func New(cap int) memc.Cache {
 	f := &frequently{}
 	f.Init()
-	lfu := new(lfu)
-	lfu.c = internal.New(f, cap)
-	return lfu
-}
-
-type lfu struct {
-	c *internal.Container
-}
-
-func (l *lfu) Load(key interface{}) (interface{}, bool) {
-	return l.c.Load(key)
-}
-
-func (l *lfu) Peek(key interface{}) (interface{}, bool) {
-	return l.c.Peek(key)
-}
-
-func (l *lfu) Store(key, value interface{}) {
-	l.c.Store(key, value)
-}
-
-func (l *lfu) Set(key, value interface{}, ttl time.Duration) {
-	l.c.Set(key, value, ttl)
-}
-
-func (l *lfu) Update(key, value interface{}) {
-	l.c.Update(key, value)
-}
-
-func (l *lfu) Delete(key interface{}) {
-	l.c.Delete(key)
-}
-
-func (l *lfu) Contains(key interface{}) bool {
-	return l.c.Contains(key)
-}
-
-func (l *lfu) Resize(size int) int {
-	return l.c.Resize(size)
-}
-
-func (l *lfu) Purge() {
-	l.c.Purge()
-}
-
-func (l *lfu) Keys() []interface{} {
-	return l.c.Keys()
-}
-
-func (l *lfu) Len() int {
-	return l.c.Len()
-}
-
-func (l *lfu) Cap() int {
-	return l.c.Capacity
-}
-
-func (l *lfu) TTL() time.Duration {
-	return l.c.TTL()
-}
-
-func (l *lfu) SetTTL(ttl time.Duration) {
-	l.c.SetTTL(ttl)
-}
-
-func (l *lfu) RegisterOnEvicted(fn func(key, value interface{})) {
-	l.c.OnEvicted = fn
-}
-
-func (l *lfu) RegisterOnExpired(fn func(key interface{})) {
-	l.c.OnExpired = fn
+	return internal.New(f, cap)
 }
 
 type element struct {
