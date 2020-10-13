@@ -3,7 +3,6 @@ package lru
 
 import (
 	"container/list"
-	"time"
 
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/internal"
@@ -16,77 +15,7 @@ func init() {
 // New returns new thread unsafe cache container.
 func New(cap int) memc.Cache {
 	col := &collection{list.New()}
-	lru := new(lru)
-	lru.c = internal.New(col, cap)
-	return lru
-}
-
-type lru struct {
-	c *internal.Container
-}
-
-func (l *lru) Load(key interface{}) (interface{}, bool) {
-	return l.c.Load(key)
-}
-
-func (l *lru) Peek(key interface{}) (interface{}, bool) {
-	return l.c.Peek(key)
-}
-
-func (l *lru) Store(key, value interface{}) {
-	l.c.Store(key, value)
-}
-
-func (l *lru) Set(key, value interface{}, ttl time.Duration) {
-	l.c.Set(key, value, ttl)
-}
-
-func (l *lru) Update(key, value interface{}) {
-	l.c.Update(key, value)
-}
-
-func (l *lru) Delete(key interface{}) {
-	l.c.Delete(key)
-}
-
-func (l *lru) Contains(key interface{}) bool {
-	return l.c.Contains(key)
-}
-
-func (l *lru) Resize(size int) int {
-	return l.c.Resize(size)
-}
-
-func (l *lru) Purge() {
-	l.c.Purge()
-}
-
-func (l *lru) Keys() []interface{} {
-	return l.c.Keys()
-}
-
-func (l *lru) Len() int {
-	return l.c.Len()
-}
-
-func (l *lru) Cap() int {
-	return l.c.Capacity
-}
-
-func (l *lru) TTL() time.Duration {
-	return l.c.TTL()
-}
-
-func (l *lru) SetTTL(ttl time.Duration) {
-	l.c.SetTTL(ttl)
-}
-
-func (l *lru) RegisterOnEvicted(fn func(key, value interface{})) {
-	l.c.OnEvicted = fn
-}
-
-func (l *lru) RegisterOnExpired(fn func(key interface{})) {
-	l.c.OnExpired = fn
+	return internal.New(col, cap)
 }
 
 type collection struct {
@@ -110,6 +39,7 @@ func (c *collection) Remove(e *internal.Entry) {
 
 func (c *collection) GetOldest() (e *internal.Entry) {
 	if le := c.ll.Back(); le != nil {
+		c.ll.Remove(le)
 		e = le.Value.(*internal.Entry)
 	}
 	return
