@@ -10,6 +10,8 @@ const (
 	IDLE Container = iota + 1
 	// FIFO cache container.
 	FIFO
+	// LIFO cache container.
+	LIFO
 	// LRU cache container.
 	LRU
 	// LFU cache container.
@@ -66,6 +68,8 @@ func (c Container) String() string {
 		return "IDLE"
 	case FIFO:
 		return "FIFO"
+	case LIFO:
+		return "LIFO"
 	case LRU:
 		return "LRU"
 	case LFU:

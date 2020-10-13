@@ -10,6 +10,7 @@ import (
 	"github.com/shaj13/libcache"
 	_ "github.com/shaj13/libcache/container/fifo"
 	_ "github.com/shaj13/libcache/container/lfu"
+	_ "github.com/shaj13/libcache/container/lifo"
 	_ "github.com/shaj13/libcache/container/lru"
 	_ "github.com/shaj13/libcache/container/mru"
 )
@@ -33,6 +34,11 @@ var cacheTests = []struct {
 		cont:          libcache.FIFO,
 		evictedKey:    1,
 		onEvictedKeys: []interface{}{0, 1},
+	},
+	{
+		cont:          libcache.LIFO,
+		evictedKey:    3,
+		onEvictedKeys: []interface{}{20, 19},
 	},
 	{
 		cont:          libcache.MRU,
