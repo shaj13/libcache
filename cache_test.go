@@ -175,6 +175,97 @@ func TestCacheTTL(t *testing.T) {
 	}
 }
 
+func TestOnEvicted(t *testing.T) {
+	table := []struct {
+		cont memc.Container
+		keys []interface{}
+	}{
+		{
+			cont: memc.LRU,
+			keys: []interface{}{0, 1},
+		},
+		{
+			cont: memc.LFU,
+			keys: []interface{}{0, 19},
+		},
+		{
+			cont: memc.FIFO,
+			keys: []interface{}{0, 1},
+		},
+	}
+	for _, tt := range table {
+		t.Run("Test"+tt.cont.String()+"CacheOnEvicted", func(t *testing.T) {
+			cache := tt.cont.New(20)
+			send := make(chan interface{})
+			done := make(chan bool)
+			evictedKeys := make([]interface{}, 0, 2)
+			cache.RegisterOnEvicted(func(key, value interface{}) {
+				send <- key
+			})
+
+			go func() {
+				for {
+					key := <-send
+					evictedKeys = append(evictedKeys, key)
+					if len(evictedKeys) >= 2 {
+						done <- true
+						return
+					}
+				}
+			}()
+
+			for i := 0; i < 22; i++ {
+				cache.Store(i, i)
+			}
+
+			select {
+			case <-done:
+			case <-time.After(time.Second * 2):
+				t.Fatal("TestOnEvicted timeout exceeded, expected to receive evicted keys")
+			}
+
+			assert.ElementsMatch(t, tt.keys, evictedKeys)
+		})
+	}
+}
+
+func TestOnExpired(t *testing.T) {
+	for _, c := range cachetest {
+		t.Run("", func(t *testing.T) {
+			send := make(chan interface{})
+			done := make(chan bool)
+			expiredKeys := make([]interface{}, 0, 2)
+			cache := c.New(0)
+			cache.RegisterOnExpired(func(key interface{}) {
+				send <- key
+			})
+			cache.SetTTL(time.Millisecond)
+
+			go func() {
+				for {
+					key := <-send
+					expiredKeys = append(expiredKeys, key)
+					if len(expiredKeys) >= 2 {
+						done <- true
+						return
+					}
+				}
+			}()
+
+			cache.Store(1, 1234)
+			cache.Store(2, 1234)
+
+			select {
+			case <-done:
+			case <-time.After(time.Second * 2):
+				t.Fatal("TestOnExpired timeout exceeded, expected to receive expired keys")
+			}
+
+			assert.ElementsMatch(t, []interface{}{1, 2}, expiredKeys)
+		})
+	}
+}
+
 func BenchmarkCache(b *testing.B) {
 	for _, c := range cachetest {
 		b.Run("Benchmark"+c.String()+"Cache", func(b *testing.B) {
