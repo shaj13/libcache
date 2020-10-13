@@ -10,7 +10,7 @@ type Collection interface {
 	Move(*Entry)
 	Add(*Entry)
 	Remove(*Entry)
-	GetOldest() *Entry
+	RemoveOldest() *Entry
 	Len() int
 	Init()
 }
@@ -155,7 +155,7 @@ func (c *Container) Len() int {
 // RemoveOldest Removes the oldest entry from cache.
 func (c *Container) RemoveOldest() {
 	if c.Capacity != 0 && c.Len() >= c.Capacity {
-		if e := c.Collection.GetOldest(); e != nil {
+		if e := c.Collection.RemoveOldest(); e != nil {
 			c.Evict(e)
 		}
 	}

@@ -28,7 +28,7 @@ func TestCollection(t *testing.T) {
 		}
 	}
 
-	oldest := c.GetOldest()
+	oldest := c.RemoveOldest()
 	c.Remove(entries[2])
 	back := c.ll.Back().Value.(*internal.Entry)
 

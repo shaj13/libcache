@@ -52,7 +52,7 @@ func (f *collection) Pop() interface{} {
 	return e
 }
 
-func (f *collection) GetOldest() (e *internal.Entry) {
+func (f *collection) RemoveOldest() (e *internal.Entry) {
 	return heap.Pop(f).(*element).value
 }
 

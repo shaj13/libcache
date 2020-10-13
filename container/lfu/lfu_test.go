@@ -27,7 +27,7 @@ func TestCollection(t *testing.T) {
 		}
 	}
 
-	oldest := f.GetOldest()
+	oldest := f.RemoveOldest()
 	f.Remove(entries[2])
 
 	assert.Equal(t, oldest.Key, 1)

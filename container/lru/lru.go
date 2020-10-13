@@ -37,7 +37,7 @@ func (c *collection) Remove(e *internal.Entry) {
 	c.ll.Remove(le)
 }
 
-func (c *collection) GetOldest() (e *internal.Entry) {
+func (c *collection) RemoveOldest() (e *internal.Entry) {
 	if le := c.ll.Back(); le != nil {
 		c.ll.Remove(le)
 		e = le.Value.(*internal.Entry)
