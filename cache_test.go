@@ -175,6 +175,44 @@ func TestCacheTTL(t *testing.T) {
 	}
 }
 
+func TestCacheUpdateNess(t *testing.T) {
+	table := []struct {
+		cont memc.Container
+		key  interface{}
+	}{
+		{
+			cont: memc.LRU,
+			key:  1,
+		},
+		{
+			cont: memc.LFU,
+			key:  1,
+		},
+		{
+			cont: memc.FIFO,
+			key:  1,
+		},
+	}
+	for _, tt := range table {
+		t.Run("Test"+tt.cont.String()+"CacheUpdateNess", func(t *testing.T) {
+			cache := tt.cont.New(0)
+			cache.Store(1, 1)
+			cache.Store(2, 2)
+			cache.Store(3, 3)
+
+			for _, k := range cache.Keys() {
+				v, _ := cache.Peek(k)
+				for i := 0; i < v.(int); i++ {
+					cache.Load(k)
+				}
+			}
+
+			cache.Resize(2)
+			assert.False(t, cache.Contains(tt.key))
+		})
+	}
+}
+
 func TestOnEvicted(t *testing.T) {
 	table := []struct {
 		cont memc.Container
