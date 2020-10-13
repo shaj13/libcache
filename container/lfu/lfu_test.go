@@ -14,7 +14,7 @@ func TestFrequently(t *testing.T) {
 	entries = append(entries, &internal.Entry{Key: 2})
 	entries = append(entries, &internal.Entry{Key: 3})
 
-	f := &frequently{}
+	f := &collection{}
 	f.Init()
 
 	for _, e := range entries {
