@@ -158,9 +158,19 @@ func TestCacheKeys(t *testing.T) {
 
 func TestCacheCap(t *testing.T) {
 	for _, c := range cachetest {
-		t.Run("Test"+c.String()+"CacheKeys", func(t *testing.T) {
+		t.Run("Test"+c.String()+"CacheCap", func(t *testing.T) {
 			cache := c.New(3)
 			assert.Equal(t, 3, cache.Cap())
+		})
+	}
+}
+
+func TestCacheTTL(t *testing.T) {
+	for _, c := range cachetest {
+		t.Run("Test"+c.String()+"CacheTTL", func(t *testing.T) {
+			cache := c.New(0)
+			cache.SetTTL(time.Second)
+			assert.Equal(t, time.Second, cache.TTL())
 		})
 	}
 }
