@@ -1,5 +1,5 @@
-// Package memc provides in-memory caches based on different caches replacement algorithms.
-package memc
+// Package libcache provides in-memory caches based on different caches replacement algorithms.
+package libcache
 
 import (
 	"sync"

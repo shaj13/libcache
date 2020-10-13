@@ -4,16 +4,16 @@ package fifo
 import (
 	"container/list"
 
-	"github.com/shaj13/memc"
-	"github.com/shaj13/memc/internal"
+	"github.com/shaj13/libcache"
+	"github.com/shaj13/libcache/internal"
 )
 
 func init() {
-	memc.FIFO.Register(New)
+	libcache.FIFO.Register(New)
 }
 
 // New returns new thread unsafe cache container.
-func New(cap int) memc.Cache {
+func New(cap int) libcache.Cache {
 	col := &collection{list.New()}
 	return internal.New(col, cap)
 }

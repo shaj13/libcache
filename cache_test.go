@@ -1,4 +1,4 @@
-package memc_test
+package libcache_test
 
 import (
 	"math/rand"
@@ -7,16 +7,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/memc"
-	_ "github.com/shaj13/memc/container/fifo"
-	_ "github.com/shaj13/memc/container/lfu"
-	_ "github.com/shaj13/memc/container/lru"
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/container/fifo"
+	_ "github.com/shaj13/libcache/container/lfu"
+	_ "github.com/shaj13/libcache/container/lru"
 )
 
-var cachetest = []memc.Container{
-	memc.LFU,
-	memc.LRU,
-	memc.FIFO,
+var cachetest = []libcache.Container{
+	libcache.LFU,
+	libcache.LRU,
+	libcache.FIFO,
 }
 
 func TestCacheStore(t *testing.T) {
@@ -179,19 +179,19 @@ func TestCacheTTL(t *testing.T) {
 
 func TestCacheUpdateNess(t *testing.T) {
 	table := []struct {
-		cont memc.Container
+		cont libcache.Container
 		key  interface{}
 	}{
 		{
-			cont: memc.LRU,
+			cont: libcache.LRU,
 			key:  1,
 		},
 		{
-			cont: memc.LFU,
+			cont: libcache.LFU,
 			key:  1,
 		},
 		{
-			cont: memc.FIFO,
+			cont: libcache.FIFO,
 			key:  1,
 		},
 	}
@@ -217,19 +217,19 @@ func TestCacheUpdateNess(t *testing.T) {
 
 func TestOnEvicted(t *testing.T) {
 	table := []struct {
-		cont memc.Container
+		cont libcache.Container
 		keys []interface{}
 	}{
 		{
-			cont: memc.LRU,
+			cont: libcache.LRU,
 			keys: []interface{}{0, 1},
 		},
 		{
-			cont: memc.LFU,
+			cont: libcache.LFU,
 			keys: []interface{}{0, 19},
 		},
 		{
-			cont: memc.FIFO,
+			cont: libcache.FIFO,
 			keys: []interface{}{0, 1},
 		},
 	}

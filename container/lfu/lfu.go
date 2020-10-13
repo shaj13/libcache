@@ -3,16 +3,16 @@ package lfu
 import (
 	"container/heap"
 
-	"github.com/shaj13/memc"
-	"github.com/shaj13/memc/internal"
+	"github.com/shaj13/libcache"
+	"github.com/shaj13/libcache/internal"
 )
 
 func init() {
-	memc.LFU.Register(New)
+	libcache.LFU.Register(New)
 }
 
 // New returns new thread unsafe cache container.
-func New(cap int) memc.Cache {
+func New(cap int) libcache.Cache {
 	f := &collection{}
 	f.Init()
 	return internal.New(f, cap)

@@ -1,4 +1,4 @@
-package memc
+package libcache
 
 import (
 	"strconv"

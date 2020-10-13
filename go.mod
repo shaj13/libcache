@@ -1,4 +1,4 @@
-module github.com/shaj13/memc
+module github.com/shaj13/libcache
 
 go 1.13
 

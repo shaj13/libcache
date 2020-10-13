@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/shaj13/memc/internal"
+	"github.com/shaj13/libcache/internal"
 )
 
 func TestCollection(t *testing.T) {

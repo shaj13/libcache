@@ -4,15 +4,15 @@ package idle
 import (
 	"time"
 
-	"github.com/shaj13/memc"
+	"github.com/shaj13/libcache"
 )
 
 func init() {
-	memc.IDLE.Register(New)
+	libcache.IDLE.Register(New)
 }
 
 // New return idle cache container that never finds/stores a key's value.
-func New(cap int) memc.Cache {
+func New(cap int) libcache.Cache {
 	return idle{}
 }
 
