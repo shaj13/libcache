@@ -3,7 +3,6 @@ package fifo
 
 import (
 	"container/list"
-	"time"
 
 	"github.com/shaj13/memc"
 	"github.com/shaj13/memc/internal"
@@ -16,77 +15,7 @@ func init() {
 // New returns new thread unsafe cache container.
 func New(cap int) memc.Cache {
 	col := &collection{list.New()}
-	fifo := new(fifo)
-	fifo.c = internal.New(col, cap)
-	return fifo
-}
-
-type fifo struct {
-	c *internal.Container
-}
-
-func (f *fifo) Load(key interface{}) (interface{}, bool) {
-	return f.c.Load(key)
-}
-
-func (f *fifo) Peek(key interface{}) (interface{}, bool) {
-	return f.c.Peek(key)
-}
-
-func (f *fifo) Store(key, value interface{}) {
-	f.c.Store(key, value)
-}
-
-func (f *fifo) Set(key, value interface{}, ttl time.Duration) {
-	f.c.Set(key, value, ttl)
-}
-
-func (f *fifo) Update(key, value interface{}) {
-	f.c.Update(key, value)
-}
-
-func (f *fifo) Delete(key interface{}) {
-	f.c.Delete(key)
-}
-
-func (f *fifo) Contains(key interface{}) bool {
-	return f.c.Contains(key)
-}
-
-func (f *fifo) Resize(size int) int {
-	return f.c.Resize(size)
-}
-
-func (f *fifo) Purge() {
-	f.c.Purge()
-}
-
-func (f *fifo) Keys() []interface{} {
-	return f.c.Keys()
-}
-
-func (f *fifo) Len() int {
-	return f.c.Len()
-}
-
-func (f *fifo) Cap() int {
-	return f.c.Capacity
-}
-
-func (f *fifo) TTL() time.Duration {
-	return f.c.TTL()
-}
-
-func (f *fifo) SetTTL(ttl time.Duration) {
-	f.c.SetTTL(ttl)
-}
-
-func (f *fifo) RegisterOnEvicted(fn func(key, value interface{})) {
-	f.c.OnEvicted = fn
-}
-
-func (f *fifo) RegisterOnExpired(fn func(key interface{})) {
-	f.c.OnExpired = fn
+	return internal.New(col, cap)
 }
 
 type collection struct {
@@ -107,6 +36,7 @@ func (c *collection) Remove(e *internal.Entry) {
 
 func (c *collection) GetOldest() (e *internal.Entry) {
 	if le := c.ll.Front(); le != nil {
+		c.ll.Remove(le)
 		e = le.Value.(*internal.Entry)
 	}
 	return
