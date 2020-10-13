@@ -70,6 +70,8 @@ func (c Container) String() string {
 		return "LRU"
 	case LFU:
 		return "LFU"
+	case MRU:
+		return "MRU"
 	default:
 		return "unknown container value " + strconv.Itoa(int(c))
 	}
