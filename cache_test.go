@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/container/arc"
 	_ "github.com/shaj13/libcache/container/fifo"
 	_ "github.com/shaj13/libcache/container/lfu"
 	_ "github.com/shaj13/libcache/container/lifo"
@@ -44,6 +45,11 @@ var cacheTests = []struct {
 		cont:          libcache.MRU,
 		evictedKey:    3,
 		onEvictedKeys: []interface{}{20, 19},
+	},
+	{
+		cont:          libcache.ARC,
+		evictedKey:    1,
+		onEvictedKeys: []interface{}{0, 1},
 	},
 }
 

@@ -18,6 +18,8 @@ const (
 	LFU
 	// MRU cache container.
 	MRU
+	// ARC cache container.
+	ARC
 	max
 )
 
@@ -76,6 +78,8 @@ func (c Container) String() string {
 		return "LFU"
 	case MRU:
 		return "MRU"
+	case ARC:
+		return "ARC"
 	default:
 		return "unknown container value " + strconv.Itoa(int(c))
 	}

@@ -63,11 +63,10 @@ func (c *Container) get(key interface{}, peek bool) (v interface{}, found bool) 
 }
 
 // Expiry returns key value expiry time.
-func (c *Container) Expiry(key interface{}) (time.Time, bool) {
-	var t time.Time
-	e, ok := c.entries[key]
+func (c *Container) Expiry(key interface{}) (t time.Time, ok bool) {
+	ok = c.Contains(key)
 	if ok {
-		t = e.Exp
+		t = c.entries[key].Exp
 	}
 	return t, ok
 }
@@ -95,7 +94,9 @@ func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	}
 
 	c.entries[key] = e
-	c.DeleteOldest()
+	if c.capacity != 0 && c.Len() >= c.capacity {
+		c.DeleteOldest()
+	}
 	c.coll.Add(e)
 }
 
@@ -136,6 +137,13 @@ func (c *Container) Resize(size int) int {
 	return diff
 }
 
+// Remove remove the key value silently without call onEvicted.
+func (c *Container) Remove(key interface{}) {
+	if e, ok := c.entries[key]; ok {
+		c.removeEntry(e)
+	}
+}
+
 // Delete deletes the key value.
 func (c *Container) Delete(key interface{}) {
 	if e, ok := c.entries[key]; ok {
@@ -164,16 +172,14 @@ func (c *Container) Len() int {
 
 // DeleteOldest Removes the oldest entry from cache.
 func (c *Container) DeleteOldest() (key, value interface{}) {
-	if c.capacity != 0 && c.Len() >= c.capacity {
-		if e := c.coll.RemoveOldest(); e != nil {
-			c.evict(e)
-			return e.Key, e.Value
-		}
+	if e := c.coll.RemoveOldest(); e != nil {
+		c.evict(e)
+		return e.Key, e.Value
 	}
+
 	return
 }
 
-// removeEntry remove entry silently.
 func (c *Container) removeEntry(e *Entry) {
 	c.coll.Remove(e)
 	if e.Timer != nil {
