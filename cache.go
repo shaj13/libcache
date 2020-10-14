@@ -20,8 +20,6 @@ type Cache interface {
 	Set(key interface{}, value interface{}, ttl time.Duration)
 	// Delete deletes the key value.
 	Delete(key interface{})
-	// DeleteOldest Removes the oldest entry from cache.
-	DeleteOldest() (key, value interface{})
 	// Expiry returns key value expiry time.
 	Expiry(key interface{}) (time.Time, bool)
 	// Keys return cache records keys.
@@ -156,12 +154,6 @@ func (c *cache) RegisterOnExpired(f func(key interface{})) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.container.RegisterOnExpired(f)
-}
-
-func (c *cache) DeleteOldest() (key, value interface{}) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.container.DeleteOldest()
 }
 
 func (c *cache) Expiry(key interface{}) (time.Time, bool) {

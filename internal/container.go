@@ -95,9 +95,7 @@ func (c *Container) Set(key, value interface{}, ttl time.Duration) {
 	}
 
 	c.entries[key] = e
-	if c.capacity != 0 && c.Len() >= c.capacity {
-		c.DeleteOldest()
-	}
+	c.DeleteOldest()
 	c.coll.Add(e)
 }
 
@@ -166,9 +164,11 @@ func (c *Container) Len() int {
 
 // DeleteOldest Removes the oldest entry from cache.
 func (c *Container) DeleteOldest() (key, value interface{}) {
-	if e := c.coll.RemoveOldest(); e != nil {
-		c.evict(e)
-		return e.Key, e.Value
+	if c.capacity != 0 && c.Len() >= c.capacity {
+		if e := c.coll.RemoveOldest(); e != nil {
+			c.evict(e)
+			return e.Key, e.Value
+		}
 	}
 	return
 }
