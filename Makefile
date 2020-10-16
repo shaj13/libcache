@@ -27,7 +27,7 @@ lint:
 	./bin/golangci-lint run -c .golangci.yml ./...
 	
 lint-fix: 
-	@FILES="$(shell find . -type f -name '*.go' -not -path "./vendor/*")"; goimports -local "github.com/shaj13/memc" -w $$FILES
+	@FILES="$(shell find . -type f -name '*.go' -not -path "./vendor/*")"; goimports -local "github.com/shaj13/libcache" -w $$FILES
 	./bin/golangci-lint run -c .golangci.yml ./... --fix 
 	./bin/golangci-lint run -c .golangci.yml ./... --fix
 
