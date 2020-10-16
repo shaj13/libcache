@@ -1,7 +1,7 @@
-[![GoDoc](https://godoc.org/github.com/shaj13/go-guardian/v2?status.svg)](https://pkg.go.dev/github.com/shaj13/go-guardian/v2)
-[![Go Report Card](https://goreportcard.com/badge/github.com/shaj13/go-guardian)](https://goreportcard.com/report/github.com/shaj13/go-guardian)
-[![Coverage Status](https://coveralls.io/repos/github/shaj13/go-guardian/badge.svg?branch=master)](https://coveralls.io/github/shaj13/go-guardian?branch=master)
-[![CircleCI](https://circleci.com/gh/shaj13/go-guardian/tree/master.svg?style=svg)](https://circleci.com/gh/shaj13/go-guardian/tree/master)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/shaj13/libcache@v1.0.0)](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shaj13/libcache)](https://goreportcard.com/report/github.com/shaj13/libcache)
+[![Coverage Status](https://coveralls.io/repos/github/shaj13/libcache/badge.svg?branch=master)](https://coveralls.io/github/shaj13/libcache?branch=master)
+[![CircleCI](https://circleci.com/gh/shaj13/libcache/tree/master.svg?style=svg)](https://circleci.com/gh/shaj13/libcache/tree/master)
 
 # Libcache
 A Lightweight in-memory key:value cache library for Go. 
@@ -20,11 +20,11 @@ While both can operate completely independently.<br>
 
 
 ## Features
-- Rich [caching API]()
+- Rich [caching API](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache)
 - Maximum cache size enforcement
 - Default cache TTL (time-to-live) as well as custom TTLs per cache entry
 - Thread safe as well as non-thread safe
-- Event-Driven callbacks ([OnExpired](),[OnEvicted]())
+- Event-Driven callbacks ([OnExpired](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache),[OnEvicted](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache))
 - Dynamic cache creation
 - Multiple cache replacement policies:
   - FIFO (First In, First Out)
