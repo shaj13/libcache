@@ -1,6 +1,7 @@
 package libcache_test
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -278,6 +279,48 @@ func TestOnExpired(t *testing.T) {
 			}
 
 			assert.ElementsMatch(t, []interface{}{1, 2}, expiredKeys)
+		})
+	}
+}
+
+func TestExpiring(t *testing.T) {
+	for _, tt := range cacheTests {
+		t.Run("Test"+tt.cont.String()+"CacheExpiring", func(t *testing.T) {
+			cache := tt.cont.New(0)
+			keys := make([]interface{}, 10)
+			for i := 0; i < 10; i++ {
+				cache.StoreWithTTL(fmt.Sprintf("%v.100", i), i, time.Millisecond*100)
+				cache.StoreWithTTL(fmt.Sprintf("%v.200", i), i, time.Millisecond*200)
+				keys[i] = fmt.Sprintf("%v.200", i)
+			}
+
+			time.Sleep(time.Millisecond * 100)
+
+			cache.Peek("notfound") // should expire *.100
+			got := cache.Keys()
+			assert.ElementsMatch(t, keys, got)
+
+			time.Sleep(time.Millisecond * 100)
+			cache.Store("notfound", 0) // should expire *.200
+			got = cache.Keys()
+			assert.ElementsMatch(t, []string{"notfound"}, got)
+
+			cache.Purge()
+
+			// check remove element will keep other entries in heap.
+			// this has been added to make sure we remove right entry
+			// by its index.
+			cache.StoreWithTTL(1, 1, time.Millisecond*100)
+			cache.StoreWithTTL(2, 2, time.Millisecond*200)
+
+			cache.Delete(2)
+			got = cache.Keys()
+			assert.ElementsMatch(t, []int{1}, got)
+
+			time.Sleep(time.Millisecond * 100)
+			cache.Peek("")
+			assert.Equal(t, 0, cache.Len())
+
 		})
 	}
 }

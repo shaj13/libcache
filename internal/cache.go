@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"container/heap"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type Entry struct {
 	Element interface{}
 	Exp     time.Time
 	timer   *time.Timer
+	index   int
 	cancel  chan struct{}
 }
 
@@ -50,6 +52,7 @@ func (e *Entry) stopTimer() {
 // of the Cache interface to minimize the effort required to implement interface.
 type Cache struct {
 	coll      Collection
+	heap      expiringHeap
 	entries   map[interface{}]*Entry
 	onEvicted func(key, value interface{})
 	onExpired func(key, value interface{})
@@ -68,13 +71,11 @@ func (c *Cache) Peek(key interface{}) (interface{}, bool) {
 }
 
 func (c *Cache) get(key interface{}, peek bool) (v interface{}, found bool) {
+	// Run GC inline before return the entry.
+	c.gc()
+
 	e, ok := c.entries[key]
 	if !ok {
-		return
-	}
-
-	if !e.Exp.IsZero() && time.Now().UTC().After(e.Exp) {
-		c.evict(e)
 		return
 	}
 
@@ -101,6 +102,9 @@ func (c *Cache) Store(key, value interface{}) {
 
 // StoreWithTTL sets the key value with TTL overrides the default.
 func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
+	// Run GC inline before pushing the new entry.
+	c.gc()
+
 	if e, ok := c.entries[key]; ok {
 		c.removeEntry(e)
 	}
@@ -112,6 +116,7 @@ func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
 			e.startTimer(ttl, c.onExpired)
 		}
 		e.Exp = time.Now().UTC().Add(ttl)
+		heap.Push(&c.heap, e)
 	}
 
 	c.entries[key] = e
@@ -205,6 +210,11 @@ func (c *Cache) removeEntry(e *Entry) {
 	c.coll.Remove(e)
 	e.stopTimer()
 	delete(c.entries, e.Key)
+	// Remove entry from the heap, the entry may does not exist because
+	// it has zero ttl or already popped up by gc
+	if len(c.heap) > 0 && e.index < len(c.heap) && e.Key == c.heap[e.index].Key {
+		heap.Remove(&c.heap, e.index)
+	}
 }
 
 // evict remove entry and fire on evicted callback.
@@ -212,6 +222,19 @@ func (c *Cache) evict(e *Entry) {
 	c.removeEntry(e)
 	if c.onEvicted != nil {
 		go c.onEvicted(e.Key, e.Value)
+	}
+}
+
+func (c *Cache) gc() {
+	now := time.Now()
+	for {
+		// Return from gc if the heap is empty or the next element is not yet
+		// expired
+		if len(c.heap) == 0 || now.Before(c.heap[0].Exp) {
+			return
+		}
+		e := heap.Pop(&c.heap).(*Entry)
+		c.removeEntry(e)
 	}
 }
 
@@ -249,4 +272,35 @@ func New(c Collection, cap int) *Cache {
 		capacity: cap,
 		entries:  make(map[interface{}]*Entry),
 	}
+}
+
+// expiringHeap is a min-heap ordered by expiration time of its entries. The
+// expiring cache uses this as a priority queue to efficiently organize entries
+// which will be garbage collected once they expire.
+type expiringHeap []*Entry
+
+var _ heap.Interface = &expiringHeap{}
+
+func (cq expiringHeap) Len() int {
+	return len(cq)
+}
+
+func (cq expiringHeap) Less(i, j int) bool {
+	return cq[i].Exp.Before(cq[j].Exp)
+}
+
+func (cq expiringHeap) Swap(i, j int) {
+	cq[i].index, cq[j].index = cq[j].index, cq[i].index
+	cq[i], cq[j] = cq[j], cq[i]
+}
+
+func (cq *expiringHeap) Push(c interface{}) {
+	c.(*Entry).index = len(*cq)
+	*cq = append(*cq, c.(*Entry))
+}
+
+func (cq *expiringHeap) Pop() interface{} {
+	c := (*cq)[cq.Len()-1]
+	*cq = (*cq)[:cq.Len()-1]
+	return c
 }
