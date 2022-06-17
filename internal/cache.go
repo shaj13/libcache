@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"time"
 )
 
@@ -23,20 +22,19 @@ type Entry struct {
 	Element interface{}
 	Exp     time.Time
 	timer   *time.Timer
-	cancel  context.CancelFunc
+	cancel  chan struct{}
 }
 
 // start/stop timer added for safety to prevent fire on expired callback,
 // when entry re-stored at the expiry time.
 func (e *Entry) startTimer(d time.Duration, f func(key, value interface{})) {
-	ctx, cancel := context.WithCancel(context.TODO())
-	e.cancel = cancel
+	e.stopTimer() // Stop old timer if there
 	e.timer = time.AfterFunc(d, func() {
-		if ctx.Err() != nil {
-			return
+		select {
+		case <-e.cancel:
+		default:
+			f(e.Key, e.Value)
 		}
-
-		f(e.Key, e.Value)
 	})
 }
 
@@ -45,7 +43,7 @@ func (e *Entry) stopTimer() {
 		return
 	}
 	e.timer.Stop()
-	e.cancel()
+	close(e.cancel)
 }
 
 // Cache is an abstracted cache that provides a skeletal implementation,
