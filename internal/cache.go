@@ -28,7 +28,7 @@ type Entry struct {
 // start/stop timer added for safety to prevent fire on expired callback,
 // when entry re-stored at the expiry time.
 func (e *Entry) startTimer(d time.Duration, f func(key, value interface{})) {
-	e.stopTimer() // Stop old timer if there
+	e.cancel = make(chan struct{})
 	e.timer = time.AfterFunc(d, func() {
 		select {
 		case <-e.cancel:
