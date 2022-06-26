@@ -49,7 +49,7 @@ func (c ReplacementPolicy) Available() bool {
 // New panics if the cache replacement policy function is not linked into the binary.
 func (c ReplacementPolicy) New(cap int) Cache {
 	cache := new(cache)
-	cache.mu = sync.RWMutex{}
+	cache.mu = sync.Mutex{}
 	cache.unsafe = c.NewUnsafe(cap)
 	return cache
 }

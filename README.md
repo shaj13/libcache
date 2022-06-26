@@ -166,26 +166,14 @@ import (
 
 func main() {
 	cache := libcache.LRU.New(10)
-	cache.RegisterOnEvicted(func(key, value interface{}) {
-		fmt.Printf("Cache Key %v Evicted\n", key)
-	})
-
-	cache.RegisterOnExpired(func(key, value interface{}) {
-		fmt.Printf("Cache Key %v Expired, Removing it from cache\n", key)
-		// use delete directly when your application 
-		// guarantee no other goroutine can store items with the same key.
-		// Peek also invoke lazy expiry. 
-		// 
-		// Note this should done only with safe cache.
-		cache.Peek(key) 
-	})	
-
-	for i:= 0 ; i < 10 ; i++ {
-        cache.StoreWithTTL(i, i, time.Microsecond)
+	fn := func(e libcache.Event) {
+		fmt.Printf("Operation %s on Key %v \n", e.Op, e.Key)
 	}
-
-	time.Sleep(time.Second)
-	fmt.Println(cache.Len())
+	cache.Notify(fn, libcache.Read, libcache.Write, libcache.Remove)	
+	cache.Load(1)
+	cache.Store(1)
+	cache.Peek(1)
+	cache.Delete(1)
 }
 ```
 

@@ -35,3 +35,4 @@ func (idle) Purge()                                               {}
 func (idle) SetTTL(ttl time.Duration)                             {}
 func (idle) RegisterOnExpired(f func(key, value interface{}))     {}
 func (idle) RegisterOnEvicted(f func(key, value interface{}))     {}
+func (idle) Notify(fn func(libcache.Event), op ...libcache.Op)    {}

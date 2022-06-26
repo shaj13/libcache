@@ -179,6 +179,11 @@ func (a *arc) RegisterOnExpired(f func(key, value interface{})) {
 	a.t2.RegisterOnExpired(f)
 }
 
+func (a *arc) Notify(fn func(libcache.Event), ops ...libcache.Op) {
+	a.t1.Notify(fn, ops...)
+	a.t2.Notify(fn, ops...)
+}
+
 func min(x, y int) int {
 	if x < y {
 		return x

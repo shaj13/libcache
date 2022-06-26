@@ -2,8 +2,34 @@ package internal
 
 import (
 	"container/heap"
+	"fmt"
+	"strconv"
 	"time"
 )
+
+// Op describes a set of cache operations.
+type Op int
+
+// These are the generalized cache operations that can trigger a event.
+const (
+	Read Op = iota
+	Write
+	Remove
+	maxOp
+)
+
+func (op Op) String() string {
+	switch op {
+	case Read:
+		return "READ"
+	case Write:
+		return "WRITE"
+	case Remove:
+		return "REMOVE"
+	default:
+		return "UNKNOWN"
+	}
+}
 
 // Collection represents the cache underlying data structure,
 // and defines the functions or operations that can be applied to the data elements.
@@ -16,48 +42,44 @@ type Collection interface {
 	Init()
 }
 
+// Event represents a single cache entry change.
+type Event struct {
+	// Op represents cache operation that triggered the event.
+	Op Op
+	// Key represents cache entry key.
+	Key interface{}
+	// Value represents cache key value.
+	Value interface{}
+	// Expiry represents cache key value expiry time.
+	Expiry time.Time
+	// Ok report whether the read operation succeed.
+	Ok bool
+}
+
+// String returns a string representation of the event in the form
+// "file: REMOVE|WRITE|..."
+func (e Event) String() string {
+	return fmt.Sprintf("%v: %s", e.Key, e.Op.String())
+}
+
 // Entry is used to hold a value in the cache.
 type Entry struct {
 	Key     interface{}
 	Value   interface{}
 	Element interface{}
 	Exp     time.Time
-	timer   *time.Timer
 	index   int
-	cancel  chan struct{}
-}
-
-// start/stop timer added for safety to prevent fire on expired callback,
-// when entry re-stored at the expiry time.
-func (e *Entry) startTimer(d time.Duration, f func(key, value interface{})) {
-	e.cancel = make(chan struct{})
-	e.timer = time.AfterFunc(d, func() {
-		select {
-		case <-e.cancel:
-		default:
-			f(e.Key, e.Value)
-		}
-	})
-}
-
-func (e *Entry) stopTimer() {
-	if e.timer == nil {
-		return
-	}
-	e.timer.Stop()
-	close(e.cancel)
 }
 
 // Cache is an abstracted cache that provides a skeletal implementation,
 // of the Cache interface to minimize the effort required to implement interface.
 type Cache struct {
-	coll      Collection
-	heap      expiringHeap
-	entries   map[interface{}]*Entry
-	onEvicted func(key, value interface{})
-	onExpired func(key, value interface{})
-	ttl       time.Duration
-	capacity  int
+	coll     Collection
+	heap     expiringHeap
+	entries  map[interface{}]*Entry
+	events   [maxOp][]func(Event)
+	ttl      time.Duration
+	capacity int
 }
 
 // Load returns key value.
@@ -70,19 +92,21 @@ func (c *Cache) Peek(key interface{}) (interface{}, bool) {
 	return c.get(key, true)
 }
 
-func (c *Cache) get(key interface{}, peek bool) (v interface{}, found bool) {
+func (c *Cache) get(key interface{}, peek bool) (interface{}, bool) {
 	// Run GC inline before return the entry.
 	c.gc()
 
 	e, ok := c.entries[key]
 	if !ok {
-		return
+		c.emit(Read, key, nil, time.Time{}, ok)
+		return nil, ok
 	}
 
 	if !peek {
 		c.coll.Move(e)
 	}
 
+	c.emit(Read, key, e.Value, e.Exp, ok)
 	return e.Value, ok
 }
 
@@ -112,9 +136,6 @@ func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
 	e := &Entry{Key: key, Value: value}
 
 	if ttl > 0 {
-		if c.onExpired != nil {
-			e.startTimer(ttl, c.onExpired)
-		}
 		e.Exp = time.Now().UTC().Add(ttl)
 		heap.Push(&c.heap, e)
 	}
@@ -123,13 +144,20 @@ func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
 	if c.capacity != 0 && c.Len() >= c.capacity {
 		c.Discard()
 	}
+
 	c.coll.Add(e)
+	c.emit(Write, e.Key, e.Value, e.Exp, false)
 }
 
 // Update the key value without updating the underlying "rank".
 func (c *Cache) Update(key, value interface{}) {
+	// Run GC inline before update the entry.
+	c.gc()
+
 	if c.Contains(key) {
-		c.entries[key].Value = value
+		e := c.entries[key]
+		e.Value = value
+		c.emit(Write, e.Key, e.Value, e.Exp, false)
 	}
 }
 
@@ -137,7 +165,7 @@ func (c *Cache) Update(key, value interface{}) {
 func (c *Cache) Purge() {
 	defer c.coll.Init()
 
-	if c.onEvicted == nil {
+	if len(c.events[Remove]) == 0 {
 		c.entries = make(map[interface{}]*Entry)
 		return
 	}
@@ -208,7 +236,6 @@ func (c *Cache) Discard() (key, value interface{}) {
 
 func (c *Cache) removeEntry(e *Entry) {
 	c.coll.Remove(e)
-	e.stopTimer()
 	delete(c.entries, e.Key)
 	// Remove entry from the heap, the entry may does not exist because
 	// it has zero ttl or already popped up by gc
@@ -220,8 +247,20 @@ func (c *Cache) removeEntry(e *Entry) {
 // evict remove entry and fire on evicted callback.
 func (c *Cache) evict(e *Entry) {
 	c.removeEntry(e)
-	if c.onEvicted != nil {
-		go c.onEvicted(e.Key, e.Value)
+	c.emit(Remove, e.Key, e.Value, e.Exp, false)
+}
+
+func (c *Cache) emit(op Op, k, v interface{}, exp time.Time, ok bool) {
+	e := Event{
+		Op:     op,
+		Key:    k,
+		Value:  v,
+		Expiry: exp,
+		Ok:     ok,
+	}
+
+	for _, fn := range c.events[op] {
+		fn(e)
 	}
 }
 
@@ -234,7 +273,7 @@ func (c *Cache) gc() {
 			return
 		}
 		e := heap.Pop(&c.heap).(*Entry)
-		c.removeEntry(e)
+		c.evict(e)
 	}
 }
 
@@ -253,16 +292,38 @@ func (c *Cache) Cap() int {
 	return c.capacity
 }
 
+// Notify causes cahce to relay events to fn.
+// If no operations are provided, all incoming operations will be relayed to fn.
+// Otherwise, just the provided operations will.
+func (c *Cache) Notify(fn func(Event), ops ...Op) {
+	if len(ops) == 0 {
+		ops = append(ops, Read, Write, Remove)
+	}
+
+	for _, op := range ops {
+		if op >= maxOp {
+			panic("libcache: notify on unknown operation #" + strconv.Itoa(int(op)))
+		}
+		c.events[op] = append(c.events[op], fn)
+	}
+}
+
 // RegisterOnEvicted registers a function,
-// to call in its own goroutine when an entry is purged from the cache.
-func (c *Cache) RegisterOnEvicted(f func(key, value interface{})) {
-	c.onEvicted = f
+// to call it when an entry is purged from the cache.
+func (c *Cache) RegisterOnEvicted(fn func(key, value interface{})) {
+	c.Notify(func(e Event) {
+		fn(e.Key, e.Value)
+	}, Remove)
 }
 
 // RegisterOnExpired registers a function,
-// to call in its own goroutine when an entry TTL elapsed.
-func (c *Cache) RegisterOnExpired(f func(key, value interface{})) {
-	c.onExpired = f
+// to call it when an entry TTL elapsed.
+func (c *Cache) RegisterOnExpired(fn func(key, value interface{})) {
+	c.Notify(func(e Event) {
+		if e.Expiry.Before(time.Now()) {
+			fn(e.Key, e.Value)
+		}
+	}, Remove)
 }
 
 // New return new abstracted cache.
