@@ -249,34 +249,18 @@ func TestOnEvicted(t *testing.T) {
 func TestOnExpired(t *testing.T) {
 	for _, tt := range cacheTests {
 		t.Run("Test"+tt.cont.String()+"CacheOnExpired", func(t *testing.T) {
-			send := make(chan interface{})
-			done := make(chan bool)
 			expiredKeys := make([]interface{}, 0, 2)
 			cache := tt.cont.New(0)
 			cache.RegisterOnExpired(func(key, _ interface{}) {
-				send <- key
+				expiredKeys = append(expiredKeys, key)
 			})
 			cache.SetTTL(time.Millisecond)
-
-			go func() {
-				for {
-					key := <-send
-					expiredKeys = append(expiredKeys, key)
-					if len(expiredKeys) >= 2 {
-						done <- true
-						return
-					}
-				}
-			}()
 
 			cache.Store(1, 1234)
 			cache.Store(2, 1234)
 
-			select {
-			case <-done:
-			case <-time.After(time.Second * 2):
-				t.Fatal("TestOnExpired timeout exceeded, expected to receive expired keys")
-			}
+			time.Sleep(time.Millisecond * 2)
+			cache.Peek(1)
 
 			assert.ElementsMatch(t, []interface{}{1, 2}, expiredKeys)
 		})
@@ -349,4 +333,31 @@ func BenchmarkCache(b *testing.B) {
 			})
 		})
 	}
+}
+
+func TestNotify(t *testing.T) {
+	for _, tt := range cacheTests {
+		t.Run("Test"+tt.cont.String()+"CacheNotify", func(t *testing.T) {
+			got := 0
+			cache := tt.cont.New(0)
+			fn := func(e libcache.Event) {
+				t.Logf("Operation %s on Key %v \n", e.Op, e.Key)
+				got += e.Key.(int)
+			}
+
+			cache.Notify(fn, libcache.Read, libcache.Write, libcache.Remove)
+
+			cache.Load(1)
+			cache.StoreWithTTL(1, 0, time.Second)
+			cache.Peek(1)
+			cache.Delete(1)
+
+			if tt.cont == libcache.ARC {
+				assert.Equal(t, 7, got)
+			} else {
+				assert.Equal(t, 4, got)
+			}
+		})
+	}
+
 }

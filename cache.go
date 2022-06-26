@@ -4,7 +4,22 @@ package libcache
 import (
 	"sync"
 	"time"
+
+	"github.com/shaj13/libcache/internal"
 )
+
+// These are the generalized cache operations that can trigger a event.
+const (
+	Read   = internal.Read
+	Write  = internal.Write
+	Remove = internal.Remove
+)
+
+// Op describes a set of cache operations.
+type Op = internal.Op
+
+// Event represents a single cache entry change.
+type Event = internal.Event
 
 // Cache stores data so that future requests for that data can be served faster.
 type Cache interface {
@@ -39,24 +54,24 @@ type Cache interface {
 	// SetTTL sets entries default TTL.
 	SetTTL(time.Duration)
 	// RegisterOnEvicted registers a function,
-	// to call in its own goroutine when an entry is purged from the cache.
+	// to call it when an entry is purged from the cache.
+	//
+	// Deprecated: use Notify instead.
 	RegisterOnEvicted(f func(key, value interface{}))
 	// RegisterOnExpired registers a function,
-	// to call in its own goroutine when an entry TTL elapsed.
-	// invocation of f, does not mean the entry is purged from the cache,
-	// if need be, it must coordinate with the cache explicitly.
+	// to call it when an entry TTL elapsed.
 	//
-	// 	var cache cache.Cache
-	// 	onExpired := func(key, value interface{}) {
-	//	 	_, _, _ = cache.Peek(key)
-	// 	}
-	//
-	// This should not be done unless the cache thread-safe.
+	// Deprecated: use Notify instead.
 	RegisterOnExpired(f func(key, value interface{}))
+
+	// Notify causes cahce to relay events to fn.
+	// If no operations are provided, all incoming operations will be relayed to fn.
+	// Otherwise, just the provided operations will.
+	Notify(fn func(Event), ops ...Op)
 }
 
 type cache struct {
-	mu     sync.RWMutex
+	mu     sync.Mutex
 	unsafe Cache
 }
 
@@ -97,8 +112,8 @@ func (c *cache) Delete(key interface{}) {
 }
 
 func (c *cache) Keys() []interface{} {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.unsafe.Keys()
 }
 
@@ -121,20 +136,20 @@ func (c *cache) Resize(s int) int {
 }
 
 func (c *cache) Len() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.unsafe.Len()
 }
 
 func (c *cache) Cap() int {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.unsafe.Cap()
 }
 
 func (c *cache) TTL() time.Duration {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.unsafe.TTL()
 }
 
@@ -156,8 +171,14 @@ func (c *cache) RegisterOnExpired(f func(key, value interface{})) {
 	c.unsafe.RegisterOnExpired(f)
 }
 
+func (c *cache) Notify(fn func(Event), ops ...Op) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.unsafe.Notify(fn, ops...)
+}
+
 func (c *cache) Expiry(key interface{}) (time.Time, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.unsafe.Expiry(key)
 }
