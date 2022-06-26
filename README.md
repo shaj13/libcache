@@ -24,7 +24,7 @@ While both can operate completely independently.<br>
 - Maximum cache size enforcement
 - Default cache TTL (time-to-live) as well as custom TTLs per cache entry
 - Thread safe as well as non-thread safe
-- Event-Driven callbacks ([OnExpired](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache),[OnEvicted](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache))
+- Event-Driven callbacks ([Notify](https://pkg.go.dev/github.com/shaj13/libcache@v1.0.0#Cache))
 - Dynamic cache creation
 - Multiple cache replacement policies:
   - FIFO (First In, First Out)
@@ -150,10 +150,6 @@ func main() {
 ```
 
 #### Events 
-Timed expiration by default is performed with lazy maintenance during reads operations,<br>
-Evict an expired entry immediately can be done using on expired callback.<br>
-You may also specify a eviction listener for your cache to perform some operation when an entry is evicted.<br>
-**Note:** Expiration events relying on golang runtime timers heap to call on expired callback when an entry TTL elapsed.
 ```go
 package main 
 import (
