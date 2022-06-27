@@ -63,10 +63,14 @@ type Cache interface {
 	//
 	// Deprecated: use Notify instead.
 	RegisterOnExpired(f func(key, value interface{}))
-	// Notify causes cahce to relay events to fn.
-	// If no operations are provided, all incoming operations will be relayed to fn.
+	// Notify causes cache to relay events to ch.
+	// If no operations are provided, all incoming operations will be relayed to ch.
 	// Otherwise, just the provided operations will.
-	Notify(fn func(Event), ops ...Op)
+	Notify(ch chan<- Event, ops ...Op)
+	// Ignore causes the provided operations to be ignored. Ignore undoes the effect
+	// of any prior calls to Notify for the provided operations.
+	// If no operations are provided, ch removed.
+	Ignore(ch chan<- Event, ops ...Op)
 	// GC runs a garbage collection and blocks the caller until the
 	// all expired items from the cache evicted.
 	//
@@ -101,8 +105,8 @@ func (c *cache) Peek(key interface{}) (interface{}, bool) {
 
 func (c *cache) Update(key interface{}, value interface{}) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.Update(key, value)
+	c.mu.Unlock()
 }
 
 func (c *cache) Store(key interface{}, value interface{}) {
@@ -189,9 +193,15 @@ func (c *cache) RegisterOnExpired(f func(key, value interface{})) {
 	c.mu.Unlock()
 }
 
-func (c *cache) Notify(fn func(Event), ops ...Op) {
+func (c *cache) Notify(ch chan<- Event, ops ...Op) {
 	c.mu.Lock()
-	c.unsafe.Notify(fn, ops...)
+	c.unsafe.Notify(ch, ops...)
+	c.mu.Unlock()
+}
+
+func (c *cache) Ignore(ch chan<- Event, ops ...Op) {
+	c.mu.Lock()
+	c.unsafe.Ignore(ch, ops...)
 	c.mu.Unlock()
 }
 
