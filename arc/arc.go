@@ -184,6 +184,21 @@ func (a *arc) Notify(fn func(libcache.Event), ops ...libcache.Op) {
 	a.t2.Notify(fn, ops...)
 }
 
+func (a *arc) GC() time.Duration {
+	x := a.t1.GC()
+	y := a.t2.GC()
+
+	// return the next nearer gc cycle.
+	if y == 0 {
+		return x
+	} else if x == 0 {
+		return y
+	} else if x < y {
+		return x
+	}
+	return y
+}
+
 func min(x, y int) int {
 	if x < y {
 		return x

@@ -94,7 +94,7 @@ func (c *Cache) Peek(key interface{}) (interface{}, bool) {
 
 func (c *Cache) get(key interface{}, peek bool) (interface{}, bool) {
 	// Run GC inline before return the entry.
-	c.gc()
+	c.GC()
 
 	e, ok := c.entries[key]
 	if !ok {
@@ -127,7 +127,7 @@ func (c *Cache) Store(key, value interface{}) {
 // StoreWithTTL sets the key value with TTL overrides the default.
 func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
 	// Run GC inline before pushing the new entry.
-	c.gc()
+	c.GC()
 
 	if e, ok := c.entries[key]; ok {
 		c.removeEntry(e)
@@ -152,7 +152,7 @@ func (c *Cache) StoreWithTTL(key, value interface{}, ttl time.Duration) {
 // Update the key value without updating the underlying "rank".
 func (c *Cache) Update(key, value interface{}) {
 	// Run GC inline before update the entry.
-	c.gc()
+	c.GC()
 
 	if c.Contains(key) {
 		e := c.entries[key]
@@ -265,14 +265,25 @@ func (c *Cache) emit(op Op, k, v interface{}, exp time.Time, ok bool) {
 	}
 }
 
-func (c *Cache) gc() {
+// GC returns the remaining time duration for the next gc cycle if there any,
+// Otherwise, it return 0.
+//
+// Calling GC without waits for the duration to elapsed considered a no-op.
+func (c *Cache) GC() time.Duration {
 	now := time.Now()
 	for {
+
 		// Return from gc if the heap is empty or the next element is not yet
-		// expired
-		if len(c.heap) == 0 || now.Before(c.heap[0].Exp) {
-			return
+		// expired.
+
+		if len(c.heap) == 0 {
+			return 0
 		}
+
+		if now.Before(c.heap[0].Exp) {
+			return c.heap[0].Exp.Sub(now)
+		}
+
 		e := heap.Pop(&c.heap).(*Entry)
 		c.evict(e)
 	}

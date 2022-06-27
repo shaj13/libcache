@@ -63,11 +63,18 @@ type Cache interface {
 	//
 	// Deprecated: use Notify instead.
 	RegisterOnExpired(f func(key, value interface{}))
-
 	// Notify causes cahce to relay events to fn.
 	// If no operations are provided, all incoming operations will be relayed to fn.
 	// Otherwise, just the provided operations will.
 	Notify(fn func(Event), ops ...Op)
+	// GC runs a garbage collection and blocks the caller until the
+	// all expired items from the cache evicted.
+	//
+	// GC returns the remaining time duration for the next gc cycle
+	// if there any, Otherwise, it return 0.
+	//
+	// Calling GC without waits for the duration to elapsed considered a no-op.
+	GC() time.Duration
 }
 
 type cache struct {
@@ -193,4 +200,11 @@ func (c *cache) Expiry(key interface{}) (time.Time, bool) {
 	exp, ok := c.unsafe.Expiry(key)
 	c.mu.Unlock()
 	return exp, ok
+}
+
+func (c *cache) GC() time.Duration {
+	c.mu.Lock()
+	dur := c.unsafe.GC()
+	c.mu.Unlock()
+	return dur
 }

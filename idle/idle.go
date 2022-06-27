@@ -27,6 +27,7 @@ func (idle) Len() (len int)                                       { return }
 func (idle) Cap() (cap int)                                       { return }
 func (idle) TTL() (t time.Duration)                               { return }
 func (idle) Expiry(interface{}) (t time.Time, ok bool)            { return }
+func (idle) GC() (dur time.Duration)                              { return }
 func (idle) Update(interface{}, interface{})                      {}
 func (idle) Store(interface{}, interface{})                       {}
 func (idle) StoreWithTTL(interface{}, interface{}, time.Duration) {}

@@ -309,32 +309,6 @@ func TestExpiring(t *testing.T) {
 	}
 }
 
-func BenchmarkCache(b *testing.B) {
-	for _, tt := range cacheTests {
-		b.Run("Benchmark"+tt.cont.String()+"Cache", func(b *testing.B) {
-			keys := []interface{}{}
-			cache := tt.cont.New(0)
-
-			for i := 0; i < 100; i++ {
-				keys = append(keys, i)
-			}
-
-			b.ResetTimer()
-			b.RunParallel(func(pb *testing.PB) {
-				for pb.Next() {
-					key := keys[rand.Intn(100)]
-					_, ok := cache.Load(key)
-					if ok {
-						cache.Delete(key)
-					} else {
-						cache.Store(key, struct{}{})
-					}
-				}
-			})
-		})
-	}
-}
-
 func TestNotify(t *testing.T) {
 	for _, tt := range cacheTests {
 		t.Run("Test"+tt.cont.String()+"CacheNotify", func(t *testing.T) {
@@ -359,5 +333,46 @@ func TestNotify(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestGC(t *testing.T) {
+	for _, tt := range cacheTests {
+		t.Run("Test"+tt.cont.String()+"CacheGC", func(t *testing.T) {
+			cache := tt.cont.NewUnsafe(0)
+			cache.StoreWithTTL(0, 0, time.Nanosecond)
+			cache.StoreWithTTL(1, 1, time.Millisecond*100)
+			dur := cache.GC()
+
+			assert.GreaterOrEqual(t, int64(dur), int64(time.Millisecond*99))
+			time.Sleep(dur)
+
+			assert.Zero(t, int(cache.GC()))
+			assert.Zero(t, cache.Len())
+		})
+	}
+}
+func BenchmarkCache(b *testing.B) {
+	for _, tt := range cacheTests {
+		b.Run("Benchmark"+tt.cont.String()+"Cache", func(b *testing.B) {
+			keys := []interface{}{}
+			cache := tt.cont.New(0)
+
+			for i := 0; i < 100; i++ {
+				keys = append(keys, i)
+			}
+
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					key := keys[rand.Intn(100)]
+					_, ok := cache.Load(key)
+					if ok {
+						cache.Delete(key)
+					} else {
+						cache.Store(key, struct{}{})
+					}
+				}
+			})
+		})
+	}
 }
