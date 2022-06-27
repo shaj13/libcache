@@ -301,7 +301,7 @@ func (c *Cache) Notify(fn func(Event), ops ...Op) {
 	}
 
 	for _, op := range ops {
-		if op >= maxOp {
+		if op < 0 && op >= maxOp {
 			panic("libcache: notify on unknown operation #" + strconv.Itoa(int(op)))
 		}
 		c.events[op] = append(c.events[op], fn)
