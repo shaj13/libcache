@@ -167,6 +167,7 @@ func (c *Cache) Purge() {
 
 	if len(c.events[Remove]) == 0 {
 		c.entries = make(map[interface{}]*Entry)
+		c.heap = nil
 		return
 	}
 
