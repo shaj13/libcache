@@ -1,6 +1,7 @@
 package libcache_test
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"testing"
@@ -321,7 +322,7 @@ func TestNotify(t *testing.T) {
 	}
 }
 
-func TestGC(t *testing.T) {
+func TestCacheGC(t *testing.T) {
 	for _, tt := range cacheTests {
 		t.Run("Test"+tt.cont.String()+"CacheGC", func(t *testing.T) {
 			cache := tt.cont.NewUnsafe(0)
@@ -336,6 +337,27 @@ func TestGC(t *testing.T) {
 			assert.Zero(t, cache.Len())
 		})
 	}
+}
+
+func TestGC(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cache := libcache.LRU.New(0)
+	go libcache.GC(ctx, cache)
+
+	cache.StoreWithTTL(1, 1, time.Millisecond*100)
+	time.Sleep(time.Millisecond * 150)
+	assert.Zero(t, cache.Len())
+
+	cache.StoreWithTTL(1, 1, time.Millisecond*100)
+	cache.StoreWithTTL(2, 2, time.Millisecond*200)
+
+	time.Sleep(time.Millisecond * 150)
+	assert.Equal(t, 1, cache.Len())
+
+	time.Sleep(time.Millisecond * 150)
+	assert.Zero(t, cache.Len())
 }
 
 func BenchmarkCache(b *testing.B) {

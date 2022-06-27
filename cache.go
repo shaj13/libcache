@@ -2,6 +2,7 @@
 package libcache
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -79,6 +80,58 @@ type Cache interface {
 	//
 	// Calling GC without waits for the duration to elapsed considered a no-op.
 	GC() time.Duration
+}
+
+// GC runs a garbage collection to evict expired items from the cache on time.
+//
+// GC trace expired items based on read-write barrier, therefore it listen to
+// cache write events and capture the result of calling the GC method on cache
+// to trigger the garbage collection loop at the right point in time.
+//
+// GC is a long running function, it returns when ctx done, therefore the
+// caller must start it in its own goroutine.
+//
+// Experimental
+//
+// Notice: This func is EXPERIMENTAL and may be changed or removed in a
+// later release.
+func GC(ctx context.Context, cache Cache) {
+	remaining := time.Duration(0)
+
+	t := time.NewTimer(remaining)
+	defer t.Stop()
+
+	c := make(chan Event, 1)
+	cache.Notify(c, Write)
+	defer func() {
+		cache.Ignore(c)
+		close(c)
+	}()
+
+	gc := func() {
+		remaining = cache.GC()
+		t.Stop()
+		if remaining > 0 {
+			t.Reset(remaining)
+		}
+	}
+
+	for {
+		select {
+		case e := <-c:
+			if e.Expiry.IsZero() {
+				continue
+			}
+
+			if remaining == 0 || time.Until(e.Expiry) < remaining {
+				gc()
+			}
+		case <-t.C:
+			gc()
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 type cache struct {
