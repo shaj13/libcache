@@ -71,20 +71,25 @@ type Cache interface {
 }
 
 type cache struct {
+	// mu guards unsafe cache.
+	// Calls to mu.Unlock are currently not deferred,
+	// because defer adds ~200 ns (as of go1.)
 	mu     sync.Mutex
 	unsafe Cache
 }
 
 func (c *cache) Load(key interface{}) (interface{}, bool) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Load(key)
+	v, ok := c.unsafe.Load(key)
+	c.mu.Unlock()
+	return v, ok
 }
 
 func (c *cache) Peek(key interface{}) (interface{}, bool) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Peek(key)
+	v, ok := c.unsafe.Peek(key)
+	c.mu.Unlock()
+	return v, ok
 }
 
 func (c *cache) Update(key interface{}, value interface{}) {
@@ -95,90 +100,97 @@ func (c *cache) Update(key interface{}, value interface{}) {
 
 func (c *cache) Store(key interface{}, value interface{}) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.Store(key, value)
+	c.mu.Unlock()
 }
 
 func (c *cache) StoreWithTTL(key interface{}, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.StoreWithTTL(key, value, ttl)
+	c.mu.Unlock()
 }
 
 func (c *cache) Delete(key interface{}) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.Delete(key)
+	c.mu.Unlock()
 }
 
 func (c *cache) Keys() []interface{} {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Keys()
+	keys := c.unsafe.Keys()
+	c.mu.Unlock()
+	return keys
 }
 
 func (c *cache) Contains(key interface{}) bool {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Contains(key)
+	ok := c.unsafe.Contains(key)
+	c.mu.Unlock()
+	return ok
 }
 
 func (c *cache) Purge() {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.Purge()
+	c.mu.Unlock()
 }
 
 func (c *cache) Resize(s int) int {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Resize(s)
+	n := c.unsafe.Resize(s)
+	c.mu.Unlock()
+	return n
 }
 
 func (c *cache) Len() int {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Len()
+	n := c.unsafe.Len()
+	c.mu.Unlock()
+	return n
 }
 
 func (c *cache) Cap() int {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Cap()
+	n := c.unsafe.Cap()
+	c.mu.Unlock()
+	return n
 }
 
 func (c *cache) TTL() time.Duration {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.TTL()
+	ttl := c.unsafe.TTL()
+	c.mu.Unlock()
+	return ttl
 }
 
 func (c *cache) SetTTL(ttl time.Duration) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.SetTTL(ttl)
+	c.mu.Unlock()
 }
 
 func (c *cache) RegisterOnEvicted(f func(key, value interface{})) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.RegisterOnEvicted(f)
+	c.mu.Unlock()
 }
 
 func (c *cache) RegisterOnExpired(f func(key, value interface{})) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.RegisterOnExpired(f)
+	c.mu.Unlock()
 }
 
 func (c *cache) Notify(fn func(Event), ops ...Op) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 	c.unsafe.Notify(fn, ops...)
+	c.mu.Unlock()
 }
 
 func (c *cache) Expiry(key interface{}) (time.Time, bool) {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.unsafe.Expiry(key)
+	exp, ok := c.unsafe.Expiry(key)
+	c.mu.Unlock()
+	return exp, ok
 }
