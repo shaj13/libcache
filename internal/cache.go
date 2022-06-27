@@ -3,16 +3,15 @@ package internal
 import (
 	"container/heap"
 	"fmt"
-	"strconv"
 	"time"
 )
 
 // Op describes a set of cache operations.
-type Op int
+type Op uint8
 
 // These are the generalized cache operations that can trigger a event.
 const (
-	Read Op = iota
+	Read Op = iota + 1
 	Write
 	Remove
 	maxOp
@@ -29,6 +28,22 @@ func (op Op) String() string {
 	default:
 		return "UNKNOWN"
 	}
+}
+
+type handler struct {
+	mask [((maxOp - 1) + 7) / 8]uint8
+}
+
+func (h *handler) want(op Op) bool {
+	return (h.mask[op/8]>>uint8(op&7))&1 != 0
+}
+
+func (h *handler) set(op Op) {
+	h.mask[op/8] |= 1 << uint8(op&7)
+}
+
+func (h *handler) clear(op Op) {
+	h.mask[op/8] &^= 1 << uint8(op&7)
 }
 
 // Collection represents the cache underlying data structure,
@@ -77,7 +92,7 @@ type Cache struct {
 	coll     Collection
 	heap     expiringHeap
 	entries  map[interface{}]*Entry
-	events   [maxOp][]func(Event)
+	handlers map[chan<- Event]*handler
 	ttl      time.Duration
 	capacity int
 }
@@ -165,7 +180,7 @@ func (c *Cache) Update(key, value interface{}) {
 func (c *Cache) Purge() {
 	defer c.coll.Init()
 
-	if len(c.events[Remove]) == 0 {
+	if len(c.handlers) == 0 {
 		c.entries = make(map[interface{}]*Entry)
 		c.heap = nil
 		return
@@ -260,8 +275,14 @@ func (c *Cache) emit(op Op, k, v interface{}, exp time.Time, ok bool) {
 		Ok:     ok,
 	}
 
-	for _, fn := range c.events[op] {
-		fn(e)
+	for c, h := range c.handlers {
+		if h.want(op) {
+			// send but do not block for it
+			select {
+			case c <- e:
+			default:
+			}
+		}
 	}
 }
 
@@ -304,38 +325,58 @@ func (c *Cache) Cap() int {
 	return c.capacity
 }
 
-// Notify causes cahce to relay events to fn.
-// If no operations are provided, all incoming operations will be relayed to fn.
+// Notify causes cache to relay events to ch.
+// If no operations are provided, all incoming operations will be relayed to ch.
 // Otherwise, just the provided operations will.
-func (c *Cache) Notify(fn func(Event), ops ...Op) {
+func (c *Cache) Notify(ch chan<- Event, ops ...Op) {
+	if ch == nil {
+		panic("libcache: Notify using nil channel")
+	}
+
+	h := new(handler)
+	c.handlers[ch] = h
+
 	if len(ops) == 0 {
-		ops = append(ops, Read, Write, Remove)
+		for i := 1; i <= int(maxOp); i++ {
+			h.set(Op(i))
+		}
+		return
 	}
 
 	for _, op := range ops {
-		if op < 0 && op >= maxOp {
-			panic("libcache: notify on unknown operation #" + strconv.Itoa(int(op)))
-		}
-		c.events[op] = append(c.events[op], fn)
+		h.set(op)
+	}
+}
+
+// Ignore causes the provided ops to be ignored. Ignore undoes the effect
+// of any prior calls to Notify for the provided ops.
+// If no ops are provided, ch removed.
+func (c *Cache) Ignore(ch chan<- Event, ops ...Op) {
+	if len(ops) == 0 {
+		delete(c.handlers, ch)
+		return
+	}
+
+	h, ok := c.handlers[ch]
+	if !ok {
+		return
+	}
+
+	for _, op := range ops {
+		h.clear(op)
 	}
 }
 
 // RegisterOnEvicted registers a function,
 // to call it when an entry is purged from the cache.
 func (c *Cache) RegisterOnEvicted(fn func(key, value interface{})) {
-	c.Notify(func(e Event) {
-		fn(e.Key, e.Value)
-	}, Remove)
+	panic("RegisterOnEvicted no longer available")
 }
 
 // RegisterOnExpired registers a function,
 // to call it when an entry TTL elapsed.
 func (c *Cache) RegisterOnExpired(fn func(key, value interface{})) {
-	c.Notify(func(e Event) {
-		if e.Expiry.Before(time.Now()) {
-			fn(e.Key, e.Value)
-		}
-	}, Remove)
+	panic("RegisterOnExpired no longer available")
 }
 
 // New return new abstracted cache.
@@ -344,6 +385,7 @@ func New(c Collection, cap int) *Cache {
 		coll:     c,
 		capacity: cap,
 		entries:  make(map[interface{}]*Entry),
+		handlers: make(map[chan<- Event]*handler),
 	}
 }
 

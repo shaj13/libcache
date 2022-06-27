@@ -179,9 +179,14 @@ func (a *arc) RegisterOnExpired(f func(key, value interface{})) {
 	a.t2.RegisterOnExpired(f)
 }
 
-func (a *arc) Notify(fn func(libcache.Event), ops ...libcache.Op) {
-	a.t1.Notify(fn, ops...)
-	a.t2.Notify(fn, ops...)
+func (a *arc) Notify(ch chan<- libcache.Event, ops ...libcache.Op) {
+	a.t1.Notify(ch, ops...)
+	a.t2.Notify(ch, ops...)
+}
+
+func (a *arc) Ignore(ch chan<- libcache.Event, ops ...libcache.Op) {
+	a.t1.Ignore(ch, ops...)
+	a.t2.Ignore(ch, ops...)
 }
 
 func (a *arc) GC() time.Duration {
