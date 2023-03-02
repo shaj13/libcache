@@ -162,16 +162,65 @@ import (
 
 func main() {
 	cache := libcache.LRU.New(10)
-	fn := func(e libcache.Event) {
-		fmt.Printf("Operation %s on Key %v \n", e.Op, e.Key)
-	}
-	cache.Notify(fn, libcache.Read, libcache.Write, libcache.Remove)	
+
+	eventc := make(chan libcache.Event, 10)
+	cache.Notify(eventc)
+	defer cache.Ignore(eventc)
+
+	go func() {
+		for {
+			e := <-eventc
+			fmt.Printf("Operation %s on Key %v \n", e.Op, e.Key)
+		}
+	}()
+
 	cache.Load(1)
-	cache.Store(1)
+	cache.Store(1, 1)
 	cache.Peek(1)
 	cache.Delete(1)
 }
 ```
+#### GC 
+```go
+package main 
+import (
+	"fmt"
+	"time"
+
+	"github.com/shaj13/libcache"
+	_ "github.com/shaj13/libcache/lru"
+)
+
+func main() {
+	cache := libcache.LRU.New(10)
+
+	eventc := make(chan libcache.Event, 10)
+	cache.Notify(eventc)
+	defer cache.Ignore(eventc)
+
+	go func() {
+		for {
+			e := <-eventc
+			fmt.Printf("Operation %s on Key %v \n", e.Op, e.Key)
+		}
+	}()
+
+	ctx, cacnel := context.WithTimeout(context.Background(), time.Second*2)
+	defer cacnel()
+
+	cache.StoreWithTTL(1, 1, time.Second)
+
+	// GC is a long running function, evict expired items from the cache on time.
+	libcache.GC(ctx, cache)
+
+	cache.StoreWithTTL(1, 1, time.Second)
+	time.Sleep(time.Second)
+
+	// Runs a garbage collection and blocks the caller until the garbage collection is complete
+	cache.GC()
+}
+```
+
 
 # Contributing
 1. Fork it
