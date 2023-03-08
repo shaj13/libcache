@@ -32,6 +32,20 @@ type arc struct {
 	b2 *internal.Cache
 }
 
+func (a *arc) Front() interface{} {
+	if k := a.t1.Front(); k != nil {
+		return k
+	}
+	return a.t2.Front()
+}
+
+func (a *arc) Back() interface{} {
+	if k := a.t1.Back(); k != nil {
+		return k
+	}
+	return a.t2.Back()
+}
+
 func (a *arc) Load(key interface{}) (value interface{}, ok bool) {
 	if val, ok := a.t1.Peek(key); ok {
 		exp, _ := a.t1.Expiry(key)

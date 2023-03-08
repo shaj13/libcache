@@ -24,6 +24,20 @@ type Event = internal.Event
 
 // Cache stores data so that future requests for that data can be served faster.
 type Cache interface {
+	// Front returns the first key of cache or nil if the cache is empty.
+	//
+	// # Experimental
+	//
+	// Notice: This func is EXPERIMENTAL and may be changed or removed in a
+	// later release.
+	Front() interface{}
+	// Back returns the last key of cache or nil if the cache is empty.
+	//
+	// # Experimental
+	//
+	// Notice: This func is EXPERIMENTAL and may be changed or removed in a
+	// later release.
+	Back() interface{}
 	// Load returns key value.
 	Load(key interface{}) (interface{}, bool)
 	// Peek returns key value without updating the underlying "recent-ness".
@@ -91,7 +105,7 @@ type Cache interface {
 // GC is a long running function, it returns when ctx done, therefore the
 // caller must start it in its own goroutine.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This func is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -140,6 +154,20 @@ type cache struct {
 	// because defer adds ~200 ns (as of go1.)
 	mu     sync.Mutex
 	unsafe Cache
+}
+
+func (c *cache) Front() interface{} {
+	c.mu.Lock()
+	k := c.unsafe.Front()
+	c.mu.Unlock()
+	return k
+}
+
+func (c *cache) Back() interface{} {
+	c.mu.Lock()
+	k := c.unsafe.Back()
+	c.mu.Unlock()
+	return k
 }
 
 func (c *cache) Load(key interface{}) (interface{}, bool) {
