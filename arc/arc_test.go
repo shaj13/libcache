@@ -53,11 +53,8 @@ func TestARCc(t *testing.T) {
 
 	a.Store(1, 1)
 	a.Load(1)
-
 	assert.Equal(t, 0, a.t1.Len())
 	assert.Equal(t, 1, a.t2.Len())
-	assert.Equal(t, 1, a.Front())
-	assert.Equal(t, 1, a.Back())
 
 	a.Delete(1)
 }

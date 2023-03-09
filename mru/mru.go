@@ -45,20 +45,6 @@ func (c *collection) Discard() (e *internal.Entry) {
 	return
 }
 
-func (c *collection) Front() (e *internal.Entry) {
-	if le := c.ll.Front(); le != nil {
-		e = le.Value.(*internal.Entry)
-	}
-	return
-}
-
-func (c *collection) Back() (e *internal.Entry) {
-	if le := c.ll.Back(); le != nil {
-		e = le.Value.(*internal.Entry)
-	}
-	return
-}
-
 func (c *collection) Len() int {
 	return c.ll.Len()
 }

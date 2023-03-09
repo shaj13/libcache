@@ -28,14 +28,11 @@ func TestCollection(t *testing.T) {
 		}
 	}
 
-	front := c.Front()
-	back := c.Back()
 	oldest := c.Discard()
 	c.Remove(entries[1])
+	back := c.ll.Back().Value.(*internal.Entry)
 
-	assert.Equal(t, 3, front.Key)
-	assert.Equal(t, 1, back.Key)
 	assert.Equal(t, 3, oldest.Key)
 	assert.Equal(t, 1, c.Len())
-	assert.Equal(t, 1, c.Back().Key)
+	assert.Equal(t, 1, back.Key)
 }

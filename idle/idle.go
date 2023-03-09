@@ -18,8 +18,6 @@ func New(cap int) libcache.Cache {
 
 type idle struct{}
 
-func (idle) Front() (v interface{})                               { return }
-func (idle) Back() (v interface{})                                { return }
 func (idle) Load(interface{}) (v interface{}, ok bool)            { return }
 func (idle) Peek(interface{}) (v interface{}, ok bool)            { return }
 func (idle) Keys() (keys []interface{})                           { return }

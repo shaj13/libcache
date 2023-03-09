@@ -57,20 +57,6 @@ func (f *collection) Discard() (e *internal.Entry) {
 	return heap.Pop(f).(*element).value
 }
 
-func (f *collection) Front() (e *internal.Entry) {
-	if f.Len() > 0 {
-		e = (*f)[f.Len()-1].value
-	}
-	return
-}
-
-func (f *collection) Back() (e *internal.Entry) {
-	if f.Len() > 0 {
-		e = (*f)[0].value
-	}
-	return
-}
-
 func (f *collection) Move(e *internal.Entry) {
 	ele := e.Element.(*element)
 	ele.count++

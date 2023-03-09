@@ -53,8 +53,6 @@ type Collection interface {
 	Add(*Entry)
 	Remove(*Entry)
 	Discard() *Entry
-	Front() *Entry
-	Back() *Entry
 	Len() int
 	Init()
 }
@@ -97,30 +95,6 @@ type Cache struct {
 	handlers map[chan<- Event]*handler
 	ttl      time.Duration
 	capacity int
-}
-
-// Front returns the first key of cache or nil if the cache is empty.
-func (c *Cache) Front() interface{} {
-	// Run GC inline before get the front entry.
-	c.GC()
-
-	if e := c.coll.Front(); e != nil {
-		return e.Key
-	}
-
-	return nil
-}
-
-// Back returns the last key of cache or nil if the cache is empty.
-func (c *Cache) Back() interface{} {
-	// Run GC inline before get the back entry.
-	c.GC()
-
-	if e := c.coll.Back(); e != nil {
-		return e.Key
-	}
-
-	return nil
 }
 
 // Load returns key value.
